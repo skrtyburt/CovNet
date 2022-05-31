@@ -56,12 +56,10 @@ load('XFAD.mat')
 covariance_analysis_tier1(XFAD,roi_labels,bluered_cmap,pval)
 
 %%
-% load tier1 output into a structure
-ctrl_tier1 = load('covariance_out_tier1_Control.mat');
-
 % set your reference modularity partition
-    % example 6m M Control
+    % example 4m M Control
     ci = ctrl_tier1.mrccPartition{2,2};
+
 % set the groups from which you want to extract module specific summaries
     % example only the males
     cmask = [1,0; 1,0; 1,0];
@@ -71,22 +69,32 @@ ctrl_tier1 = load('covariance_out_tier1_Control.mat');
     % 1 0
     % it should be the same size as number of data cells (in our example
     % its 3 ages on rows and sex as two columns).
-% set output file root for any outputs that are written out;
-outroot1 = 'ctrl6M_M_ref_ctrl';
 
+% load tier1 output into a structure
+ctrl_tier1 = load('covariance_out_tier1_Control.mat');
+% set output file root for any outputs that are written out;
+outroot1 = 'ctrl_4M_M_ref_ctrl';
+% run the script
 % function for extracting mean SUVR for specified input modules
 % means and stdev for each module are saved to a text file
 fcn_summary_modules(ci,ctrl_tier1,cmask,outroot1)
 
-outroot2 = 'ctrl6M_M_ref_xfad';
 
+% repeat for xfad using the same reference partition and cmask
 xfad_tier1 = load('covariance_out_tier1_xfad.mat');
-
-fcn_summary_modules(ci,xfad_tier1,cmask,outroot2)
+% if you want to change reference to xfad 4m M
+ci2 = xfad_tier1.mrccPartition{2,2};
+% label for the text file
+outroot2 = 'xfad_4M_M_ref_xfad';
+% run the script
+fcn_summary_modules(ci2,xfad_tier1,cmask,outroot2)
 
 %% tier 2 compare network metrics
 
-covariance_analysis_tier2(ctrl_tier1,xfad_tier1)
+
+ci3 = ctrl_tier1.mrccPartition{2,2};
+cmask2 = [1,0;0,0;0,0];
+covariance_analysis_tier2(ci3,'ctrl_4m_M',ctrl_tier1,xfad_tier1,cmask2)
 
 
 

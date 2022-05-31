@@ -57,7 +57,7 @@ end
 covMat = rNames;        covMat(1,1:Nc) = cNames;        % covariance matrices
 cov_paramP = rNames;    cov_paramP(1,1:Nc) = cNames;    % parametric p value matrices
 
-outdir = fullfile(pwd,'figures');
+outdir = fullfile(pwd,'../ca_tier1_figures');
 if ~exist(outdir,'dir')
     mkdir(outdir)
 end
@@ -473,9 +473,9 @@ clear filename
 %-------------------------------------------------------------------------%
 ver = length(dir(fullfile(pwd,['covariance_out_tier1_' grp '*'])));
 if ver == 0
-    fileout = ['covariance_out_tier1_' grp '.mat'];
+    fileout = ['../covariance_out_tier1_' grp '.mat'];
 else
-    fileout = ['covariance_out_tier1_' grp '_run' num2str(ver) '.mat'];
+    fileout = ['../covariance_out_tier1_' grp '_run' num2str(ver) '.mat'];
 end
 save(fileout,'adjMI','agrMat','allPartitions',...
     'cellData','cNames','cons_comm_roi','cons_labels','cov_permP','cov_paramP',...

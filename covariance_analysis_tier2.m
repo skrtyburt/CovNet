@@ -38,7 +38,7 @@ end
 if ~exist('cmap','var')
     cmap = turbo(64);
 end
-if legnth(g1t1_struct.pval)~=length(g2t1_struct.pval)
+if length(g1t1_struct.pval)~=length(g2t1_struct.pval)
     fprintf(2,'Unequal number of p-value thresholds between groups.\n')
     fprintf(2,'Make sure both groups were ran with the same p-value inputs. Exiting...\n')
     return
@@ -63,7 +63,7 @@ cmask = vertcat(zeros(1,g1t1_struct.Nc), horzcat(zeros(g1t1_struct.Nr-1,1),cmask
 % find unique community labels
 ciu = unique(ci);
 % set outout directory
-outdir = [label_ci,'ord_mod_comparison'];
+outdir = ['../' label_ci 'ord_mod_comparison'];
 if ~exist(outdir,'dir')
     mkdir(outdir)
 end
