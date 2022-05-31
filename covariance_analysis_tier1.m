@@ -107,13 +107,13 @@ end
 
 adjMI = double.empty;
 ci = 0; % counting indices
-for r=2:Nr % every row (g1)
-for c=2:Nc % every column (g1)
+for r=2:Nc % every column (g1)
+for c=2:Nr % every row (g1)
     ci=ci+1;
     cons_labels{ci} = [cellData{r,1} ' ' cellData{1,c}];
     cii = 0;
-    for rr=2:Nr % every row (g2)
-    for cc=2:Nc % every column (g2)
+    for rr=2:Nc % every column (g2)
+    for cc=2:Nr % every row (g2)
         cii=cii+1;
         p1 = mrccPartition{r,c};           %    
         p2 = mrccPartition{rr,cc};         %  
@@ -131,12 +131,10 @@ figure(...
         'units','inches',...
         'position',[1 1 7.5 6],...
         'paperpositionmode','auto');
-%%% TEMP HARD CODING ORDER %%
-ORD = [1,3,5,2,4,6];
 %%------------------------%%
-imagesc(adjMI(ORD,ORD)); axis square
-yticks(1:1:cii); yticklabels(cons_labels(ORD))
-xticks(1:1:cii); xticklabels(cons_labels(ORD)); xtickangle(45)
+imagesc(adjMI); axis square
+yticks(1:1:cii); yticklabels(cons_labels)
+xticks(1:1:cii); xticklabels(cons_labels); xtickangle(45)
 title('Adjusted Mutual Information')
 colorbar
 filename = fullfile(outdir, ['adj_mutual_info_' grp '_consensus_comparisons.pdf']);
