@@ -69,7 +69,7 @@ covariance_analysis_tier1(XFAD,roi_labels,bluered_cmap,pval)
     % 1 0
     % it should be the same size as number of data cells (in our example
     % its 3 ages on rows and sex as two columns).
-
+%%
 % load tier1 output into a structure
 ctrl_tier1 = load('covariance_out_tier1_Control.mat');
 % set output file root for any outputs that are written out;
@@ -78,7 +78,7 @@ outroot1 = 'ctrl_4M_M_ref_ctrl';
 % function for extracting mean SUVR for specified input modules
 % means and stdev for each module are saved to a text file
 fcn_summary_modules(ci,ctrl_tier1,cmask,outroot1)
-
+%%
 
 % repeat for xfad using the same reference partition and cmask
 xfad_tier1 = load('covariance_out_tier1_xfad.mat');
