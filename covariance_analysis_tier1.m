@@ -77,7 +77,7 @@ close all
 % completeness, but the recommended methods for identifying signifance edge
 % covariance is permutations testing.
 
-%% Permutation testing of significant egdge covariance 
+%% Permutation testing of significant edge covariance 
 % 10,000 permutations
 cov_permP = rNames;    cov_permP(1,1:Nc) = cNames;    % permutation p value matrices
 for r=2:Nr % every row
@@ -107,13 +107,13 @@ end
 
 adjMI = double.empty;
 ci = 0; % counting indices
-for r=2:Nc % every column (g1)
-for c=2:Nr % every row (g1)
+for c=2:Nc % every column (g1)
+for r=2:Nr % every row (g1)
     ci=ci+1;
     cons_labels{ci} = [cellData{r,1} ' ' cellData{1,c}];
     cii = 0;
-    for rr=2:Nc % every column (g2)
-    for cc=2:Nr % every row (g2)
+    for cc=2:Nc % every column (g2)
+    for rr=2:Nr % every row (g2)
         cii=cii+1;
         p1 = mrccPartition{r,c};           %    
         p2 = mrccPartition{rr,cc};         %  
