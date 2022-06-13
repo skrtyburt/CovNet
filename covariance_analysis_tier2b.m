@@ -106,6 +106,23 @@ end
 close all
 
 %% compare nodal degree distributions
+
+
+for p=1:length(pidx)
+    % loop over p-value thresholds
+    pcmp = g1t1_struct.pval(pidx(p));
+    for cmi = 1:length(ciu)
+        % loop over communities
+        for ll=1:length(lidx)
+            % loop over groups in cmask
+            g1m
+            g2m
+
+
+
+
+
+
 for p=1:length(pidx)
     pcmp = g1t1_struct.pval(pidx(p));
     for ll=1:length(lidx)
