@@ -55,7 +55,15 @@ lidx = find(cmask);
 
 % set outout directory
 %  CREATE NEW NAME FROM GROUP CONCATENATION
-outdir = [g1t1_struct.grp '-' g2t1_struct.grp '_comparison'];
+outroot = [g1t1_struct.grp '-' g2t1_struct.grp '_comparison'];
+
+ver = length(dir(fullfile(pwd,[outroot '*'])));
+if ver == 0
+    outdir = fullfile(pwd,outroot);
+else
+    outdir = fullfile(pwd,[outroot '_run' num2str(ver+1)]);
+end
+clear ver
 if ~exist(outdir,'dir')
     mkdir(outdir)
 end
@@ -69,9 +77,9 @@ for p=1:length(pidx)
         dd2 = g2t1_struct.degree(:,pidx(p),lidx(ll));
         lb2 = [g2t1_struct.grp ' ' g2t1_struct.labels{lidx(ll)}];
         figure;
-        histogram(dd1,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2)
+        histogram(dd1,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',5)
         hold on
-        histogram(dd2,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2)
+        histogram(dd2,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',5)
         [~,ksp]=kstest2(dd1,dd2);
         xlabel('Degree'); ylabel('Frequency')
         title([num2str(pcmp) ' thr: Degree Distributions: KS test p = ' num2str(ksp)])
@@ -93,9 +101,9 @@ for p=1:length(pidx)
         dd2 = g2t1_struct.posStrength(:,pidx(p),lidx(ll));
         lb2 = [g2t1_struct.grp '-' g2t1_struct.labels{lidx(ll)}];
         figure;
-        histogram(dd1,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2)
+        histogram(dd1,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',5)
         hold on
-        histogram(dd2,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2)
+        histogram(dd2,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',5)
         [~,ksp]=kstest2(dd1,dd2);
         xlabel('Positive Strength'); ylabel('Frequency')
         title([num2str(pcmp) ' thr: Positive Strength Distributions: KS test p = ' num2str(ksp)])
@@ -117,9 +125,9 @@ for p=1:length(pidx)
         dd2 = g2t1_struct.negStrength(:,pidx(p),lidx(ll));
         lb2 = [g2t1_struct.grp '-' g2t1_struct.labels{lidx(ll)}];
         figure;
-        histogram(dd1,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2)
+        histogram(dd1,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',5)
         hold on
-        histogram(dd2,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2)
+        histogram(dd2,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',5)
         [~,ksp]=kstest2(dd1,dd2);
         xlabel('Negative Strength'); ylabel('Frequency')
         title([num2str(pcmp) ' thr: Negative Strength Distributions: KS test p = ' num2str(ksp)])
@@ -141,9 +149,9 @@ for p=1:length(pidx)
         dd2 = g2t1_struct.clust_coef(:,pidx(p),lidx(ll));
         lb2 = [g2t1_struct.grp '-' g2t1_struct.labels{lidx(ll)}];
         figure;
-        histogram(dd1,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2)
+        histogram(dd1,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',5)
         hold on
-        histogram(dd2,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2)
+        histogram(dd2,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',5)
         [~,ksp]=kstest2(dd1,dd2);
         xlabel('Clustering Coefficient'); ylabel('Frequency')
         title([num2str(pcmp) ' thr: Clustering Coefficient Distributions: KS test p = ' num2str(ksp)])
@@ -154,4 +162,6 @@ for p=1:length(pidx)
         clear filename dd1 dd2 lb1 lb2
     end
     clear pcmp
+end
+close all
 end

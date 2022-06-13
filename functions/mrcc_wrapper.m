@@ -14,6 +14,7 @@ S = eventSamples(mat, samples);
 
 % identify a consensus community structure and hierarchical consensus
 [cons_vec, Tree_mrcc] = hierarchicalConsensus(S);
+[~,ord] = sort(cons_vec);
 
 % get a coclassification (agreement) matrix from the partition set.
 ca_mat = coclassificationMatrix(S);
@@ -29,13 +30,13 @@ if exist('flag','var') && flag == 1
         'paperpositionmode','auto');
     [ax_C, ax_H] = consensusPlot(ca_mat,cons_vec,Tree_mrcc);
     ax_C.YTick = 1:1:length(ROIlabels);
-    ax_C.YTickLabel = ROIlabels;
+    ax_C.YTickLabel = ROIlabels(ord);
     ax_C.XTick = 1:1:length(ROIlabels);
-    ax_C.XTickLabel = ROIlabels;
+    ax_C.XTickLabel = ROIlabels(ord);
     ax_C.XTickLabelRotation = 90;
 
     ax_H.YAxisLocation =  'right';
-    ax_H.YLabel.String = [num2str(size(all_part,2)) ' partiton tree'];
+    ax_H.YLabel.String = [num2str(size(all_part,2)) ' Partitons in Hierarchical Tree (x-axis: meanCA)'];
     ax_H.CurrentPoint
 end
 end

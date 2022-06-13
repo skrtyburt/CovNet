@@ -1,3 +1,12 @@
+%% COPY THIS SCRIPT ONE LEVEL UP FROM THE COVNET DIRECTORY AND NAME IT SO IT MAKES SENSE FOR YOUR PROJECT.
+
+%% YOU SHOULD HAVE A PROJECT DIRECRORY WITH THE COVNET CODE FOLDER AND THE WORKFLOW SCRIPT WHEN YOU START.
+
+%% THEN FOLLOW THE STEP BELOW TO CREATE AND SAVE THE DATA CELLS AS .MAT FILES IN THE PROJECT DIRECTORY.
+
+%% THE PROJECT DIRECTORY SHOULD BE YOUR WORKING DIRECTORY WHEN YOU RUN THE SCRIPT, SO THAT ALL OUTPUTS ARE
+%% WRITTEN EITHER TO THE PROJECT DIRECTORY OR TO SUBDIRECTORIES CREATED BY THIS CODE.
+
 
 %% Step1, Prepare data:
 % example:
@@ -58,7 +67,7 @@ save('CTRL.mat','CTRL','-append')
 %% Prepare the necessary inputs
 
     % Add code package to matlab path. (THIS PATH WILL VARY FOR EACH USER)
-addpath(genpath('../CovNet'))
+addpath(genpath('CovNet'))
 
     % Load region labels for your data.
 load('roi_labels.mat')   
@@ -132,7 +141,10 @@ fcn_summary_modules(ci2,xfad_tier1,cmask,outroot2)
 covariance_analysis_tier2a(ctrl_tier1,xfad_tier1,cmask)
 
     % Compare within module network metrics (given a reference partition)
-
+    
+    cmap = parula(64);
+    
+covariance_analysis_tier2b(ci,'CTRL_4mM_ref',ctrl_tier1,xfad_tier1,cmask,cmap,pval)
 
 
 

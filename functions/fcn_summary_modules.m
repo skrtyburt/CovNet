@@ -62,13 +62,19 @@ for i=1:length(rw)
 end
 
 if exist('outprefix','var')
-    writetable(gmeans,[outprefix '_comsummary.txt'],'Delimiter','\t')
+    fileout = [outprefix '_comsummary'];
 else
-    writetable(gmeans,'refMod_comsummary.txt','Delimiter','\t')
+    fileout = 'refMod_comsummary';
 end
 
-
-
+ver = length(dir(fullfile(pwd,[fileout '*'])));
+if ver == 0
+    writetable(gmeans,[fileout '.txt'],'Delimiter','\t')
+else
+    writetable(gmeans,[fileout '_run' num2str(ver+1),'.txt'],'Delimiter','\t')
+end
+clear ver
+end
 
 
 

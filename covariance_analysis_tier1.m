@@ -57,7 +57,15 @@ end
 covMat = rNames;        covMat(1,1:Nc) = cNames;        % covariance matrices
 cov_paramP = rNames;    cov_paramP(1,1:Nc) = cNames;    % parametric p value matrices
 
-outdir = fullfile(pwd,'../ca_tier1_figures');
+outroot = ['ca_tier1_figures_' grp];
+
+ver = length(dir(fullfile(pwd,[outroot '*'])));
+if ver == 0
+    outdir = fullfile(pwd,outroot);
+else
+    outdir = fullfile(pwd,[outroot '_run' num2str(ver+1)]);
+end
+clear ver
 if ~exist(outdir,'dir')
     mkdir(outdir)
 end
@@ -135,7 +143,7 @@ figure(...
 imagesc(adjMI); axis square
 yticks(1:1:cii); yticklabels(cons_labels)
 xticks(1:1:cii); xticklabels(cons_labels); xtickangle(45)
-title('Adjusted Mutual Information')
+title(['Adjusted Mutual Information - ' grp])
 colorbar
 filename = fullfile(outdir, ['adj_mutual_info_' grp '_consensus_comparisons.pdf']);
 print(gcf,'-dpdf',filename)  % SAVE FIGURE
@@ -471,9 +479,9 @@ clear filename
 %-------------------------------------------------------------------------%
 ver = length(dir(fullfile(pwd,['covariance_out_tier1_' grp '*'])));
 if ver == 0
-    fileout = ['../covariance_out_tier1_' grp '.mat'];
+    fileout = ['covariance_out_tier1_' grp '.mat'];
 else
-    fileout = ['../covariance_out_tier1_' grp '_run' num2str(ver) '.mat'];
+    fileout = ['covariance_out_tier1_' grp '_run' num2str(ver+1) '.mat'];
 end
 save(fileout,'adjMI','agrMat','allPartitions',...
     'cellData','cNames','cons_comm_roi','cons_labels','cov_permP','cov_paramP',...
