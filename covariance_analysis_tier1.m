@@ -326,7 +326,7 @@ switch pt
                 clear gv
             end
             idx=idx+1;
-            m(1,i) = idx-3;
+            m(1,i) = idx-(Nr-1);
             if i~=length(labels)
                 degreevec(end+1,1)=nan;
                 gvec(end+1,1) = idx;
@@ -366,12 +366,12 @@ switch pt
         plot(totalPosStrength)
         legend(labels,'Location','best')
         xticks(1:1:np); xticklabels(pval); xlabel('permutation p-value threshold') 
-        ylabel('Sum Positive Nodal Strength')
+        ylabel('Sum Positive Strength')
         subplot(1,2,2)
         plot(totalNegStrength)
         legend(labels,'Location','best')
         xticks(1:1:np); xticklabels(pval); xlabel('permutation p-value threshold')
-        ylabel('Sum Negative Nodal Strength')
+        ylabel('Sum Negative Strength')
         sgtitle({[grp ' group Cumulative Strength across p-value range:'],num2str(pval)})
         
         filename = fullfile(outdir, ['netwTotalStrength_' grp '_' plab '.pdf']);
@@ -396,11 +396,11 @@ switch pt
         subplot(2,2,1:2)
         boxplot(psvec,gvec)
         xticks(m); xticklabels(labels)
-        ylabel('Positive Strength')
+        ylabel('Positive Nodal Strength')
         subplot(2,2,3:4)
         boxplot(nsvec,gvec)
         xticks(m); xticklabels(labels)
-        ylabel('Negative Strength')
+        ylabel('Negative Nodal Strength')
         sgtitle({[grp ' group Strength across p-value range: '], num2str(pval)})
 
         filename = fullfile(outdir, ['netwNodalStrength_' grp '_' plab '.pdf']);
