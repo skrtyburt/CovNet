@@ -64,7 +64,7 @@ labels = g1t1_struct.labels(lidx);
 % find unique community labels
 ciu = unique(ci);
 % set outout directory
-outroot = [label_ci 'ord_mod_comparison'];
+outroot = ['tier2b_' label_ci 'ord_mod_comparison'];
 
 ver = length(dir(fullfile(pwd,[outroot '*'])));
 if ver == 0
@@ -132,6 +132,8 @@ for r2 = 1:size(gci,2)-1
 end
 adjMI = adjMI + adjMI';
 adjMI(adjMI<0)=0;
+diag = logical(eye(length(adjMI)));
+adjMI(diag)=0;
 
 % compare partitions across groups
 figure(...
@@ -143,7 +145,7 @@ imagesc(adjMI); axis square
 yticks(1:1:length(gci_label)); yticklabels(gci_label)
 xticks(1:1:length(gci_label)); xticklabels(gci_label); xtickangle(45)
 title('Adjusted Mutual Information')
-colorbar
+colorbar; colormap(cmap(length(cmap)/2:end,:))
 filename = fullfile(outdir, 'adj_mutual_info_comparisons.pdf');
 print(gcf,'-dpdf',filename)  % SAVE FIGURE
 clear filename
@@ -259,7 +261,7 @@ for p=1:length(pidx)
         boxplot(g2_nstr,labels)
         title({' ',g2t1_struct.grp})
         
-        sgtitle({[label_ci ' ref-partition w/in module nodal pos strength'],['network thresh p<' num2str(pcmp) ' module ' num2str(ciu(cmi))]},'Interpreter','none')
+        sgtitle({[label_ci ' ref-partition w/in module nodal neg strength'],['network thresh p<' num2str(pcmp) ' module ' num2str(ciu(cmi))]},'Interpreter','none')
         
         clear g1_nstr g2_nstr
         

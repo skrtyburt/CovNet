@@ -1,7 +1,7 @@
 function covariance_analysis_tier2a(g1t1_struct,g2t1_struct,cmask,pthresh)
 
 % Group comparisons of tier1 outputs within factor levels.
-
+nbins = 5;
 narginchk(2,4)
 % check to make sure inputs are structures
 if ~isstruct(g1t1_struct) || ~isstruct(g2t1_struct)
@@ -55,7 +55,7 @@ lidx = find(cmask);
 
 % set outout directory
 %  CREATE NEW NAME FROM GROUP CONCATENATION
-outroot = [g1t1_struct.grp '-' g2t1_struct.grp '_comparison'];
+outroot = ['tier2a_' g1t1_struct.grp '-' g2t1_struct.grp '_comparison'];
 
 ver = length(dir(fullfile(pwd,[outroot '*'])));
 if ver == 0
@@ -68,100 +68,141 @@ if ~exist(outdir,'dir')
     mkdir(outdir)
 end
 
-%% compare nodal degree distributions
 for p=1:length(pidx)
     pcmp = g1t1_struct.pval(pidx(p));
+    d = unique(g1t1_struct.density(pidx(p),:));
+    d2 = unique(g2t1_struct.density(pidx(p),:));
+    if length(d) == 1 && length(d) == length(d2)
+        disp('Equal densities across groups and conditions.'); dcase = 1;
+    else
+        disp('Variance in network densities found.'); dcase = 2;
+    end
+
+%% compare nodal degree distributions
+
+    mxidx = max([max(max(g1t1_struct.degree(:,pidx(p),:))) max(max(g2t1_struct.degree(:,pidx(p),:)))]);
+    for ll=1:length(lidx)
+        hmax(ll,1) = max(histcounts(g1t1_struct.degree(:,pidx(p),lidx(ll)),nbins));
+        hmax(ll,2) = max(histcounts(g2t1_struct.degree(:,pidx(p),lidx(ll)),nbins));
+    end
+    hmax = max(max(hmax));
     for ll=1:length(lidx)
         dd1 = g1t1_struct.degree(:,pidx(p),lidx(ll));
         lb1 = [g1t1_struct.grp ' ' g1t1_struct.labels{lidx(ll)}];
         dd2 = g2t1_struct.degree(:,pidx(p),lidx(ll));
         lb2 = [g2t1_struct.grp ' ' g2t1_struct.labels{lidx(ll)}];
         figure;
-        histogram(dd1,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',5)
+        histogram(dd1,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',nbins)
         hold on
-        histogram(dd2,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',5)
+        histogram(dd2,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',nbins)
+        xlim([0 mxidx+1]); xticks(0:2:mxidx+1)
+        ylim([0 hmax+1]); yticks(0:2:hmax+1)
         [~,ksp]=kstest2(dd1,dd2);
         xlabel('Degree'); ylabel('Frequency')
         title([num2str(pcmp) ' thr: Degree Distributions: KS test p = ' num2str(ksp)])
-        legend({lb1,lb2},'Location','best')
+        legend({lb1,lb2},'Location','northeastoutside')
 
         filename = fullfile(outdir, ['Degree_dist_' lb1 '_v_' lb2 '_netw_pthr' num2str(pcmp) '.pdf']);
         print(gcf,'-dpdf',filename)
         clear filename dd1 dd2 lb1 lb2
     end
-    clear pcmp
-end
+    clear mxidx hmax
+
 
 %% compare positive strength distributions
-for p=1:length(pidx)
-    pcmp = g1t1_struct.pval(pidx(p));
+
+   
+    mxidx = max([max(max(g1t1_struct.posStrength(:,pidx(p),:))) max(max(g2t1_struct.posStrength(:,pidx(p),:)))]);
+    for ll=1:length(lidx)
+        hmax(ll,1) = max(histcounts(g1t1_struct.posStrength(:,pidx(p),lidx(ll)),nbins));
+        hmax(ll,2) = max(histcounts(g2t1_struct.posStrength(:,pidx(p),lidx(ll)),nbins));
+    end
+    hmax = max(max(hmax));
     for ll=1:length(lidx)
         dd1 = g1t1_struct.posStrength(:,pidx(p),lidx(ll));
         lb1 = [g1t1_struct.grp '-' g1t1_struct.labels{lidx(ll)}];
         dd2 = g2t1_struct.posStrength(:,pidx(p),lidx(ll));
         lb2 = [g2t1_struct.grp '-' g2t1_struct.labels{lidx(ll)}];
         figure;
-        histogram(dd1,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',5)
+        histogram(dd1,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',nbins)
         hold on
-        histogram(dd2,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',5)
+        histogram(dd2,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',nbins)
+        xlim([0 mxidx+1]); xticks(0:2:mxidx+1)
+        ylim([0 hmax+1]); yticks(0:2:hmax+1)
         [~,ksp]=kstest2(dd1,dd2);
         xlabel('Positive Strength'); ylabel('Frequency')
         title([num2str(pcmp) ' thr: Positive Strength Distributions: KS test p = ' num2str(ksp)])
-        legend({lb1,lb2},'Location','best')
+        legend({lb1,lb2},'Location','northeastoutside')
 
         filename = fullfile(outdir, ['pos_strength_dist_' lb1 '_v_' lb2 '_netw_pthr' num2str(pcmp) '.pdf']);
         print(gcf,'-dpdf',filename)
         clear filename dd1 dd2 lb1 lb2
     end
-    clear pcmp
-end
+    clear mxidx hmax
+
 
 %% compare negative strength distributions
-for p=1:length(pidx)
-    pcmp = g1t1_struct.pval(pidx(p));
+
+    
+    mxidx = max([max(max(g1t1_struct.negStrength(:,pidx(p),:))) max(max(g2t1_struct.negStrength(:,pidx(p),:)))]);
+    for ll=1:length(lidx)
+        hmax(ll,1) = max(histcounts(g1t1_struct.negStrength(:,pidx(p),lidx(ll)),nbins));
+        hmax(ll,2) = max(histcounts(g2t1_struct.negStrength(:,pidx(p),lidx(ll)),nbins));
+    end
+    hmax = max(max(hmax));
     for ll=1:length(lidx)
         dd1 = g1t1_struct.negStrength(:,pidx(p),lidx(ll));
         lb1 = [g1t1_struct.grp '-' g1t1_struct.labels{lidx(ll)}];
         dd2 = g2t1_struct.negStrength(:,pidx(p),lidx(ll));
         lb2 = [g2t1_struct.grp '-' g2t1_struct.labels{lidx(ll)}];
         figure;
-        histogram(dd1,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',5)
+        histogram(dd1,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',nbins)
         hold on
-        histogram(dd2,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',5)
+        histogram(dd2,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',nbins)
+        xlim([0 mxidx+1]); xticks(0:2:mxidx+1)
+        ylim([0 hmax+1]); yticks(0:2:hmax+1)
         [~,ksp]=kstest2(dd1,dd2);
         xlabel('Negative Strength'); ylabel('Frequency')
         title([num2str(pcmp) ' thr: Negative Strength Distributions: KS test p = ' num2str(ksp)])
-        legend({lb1,lb2},'Location','best')
+        legend({lb1,lb2},'Location','northeastoutside')
 
         filename = fullfile(outdir, ['neg_strength_dist_' lb1 '_v_' lb2 '_netw_pthr' num2str(pcmp) '.pdf']);
         print(gcf,'-dpdf',filename)
         clear filename dd1 dd2 lb1 lb2
     end
-    clear pcmp
-end
+    clear mxidx hmax
+
 
 %% compare clustering coefficient distributions
-for p=1:length(pidx)
-    pcmp = g1t1_struct.pval(pidx(p));
+
+    
+    mxidx = max([max(max(g1t1_struct.clust_coef(:,pidx(p),:))) max(max(g2t1_struct.clust_coef(:,pidx(p),:)))]);
+    for ll=1:length(lidx)
+        hmax(ll,1) = max(histcounts(g1t1_struct.clust_coef(:,pidx(p),lidx(ll)),nbins));
+        hmax(ll,2) = max(histcounts(g2t1_struct.clust_coef(:,pidx(p),lidx(ll)),nbins));
+    end
+    hmax = max(max(hmax));
     for ll=1:length(lidx)
         dd1 = g1t1_struct.clust_coef(:,pidx(p),lidx(ll));
         lb1 = [g1t1_struct.grp '-' g1t1_struct.labels{lidx(ll)}];
         dd2 = g2t1_struct.clust_coef(:,pidx(p),lidx(ll));
         lb2 = [g2t1_struct.grp '-' g2t1_struct.labels{lidx(ll)}];
         figure;
-        histogram(dd1,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',5)
+        histogram(dd1,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',nbins)
         hold on
-        histogram(dd2,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',5)
+        histogram(dd2,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',nbins)
+        xlim([0 mxidx+1]); xticks(0:2:mxidx+1)
+        ylim([0 hmax+1]); yticks(0:2:hmax+1)
         [~,ksp]=kstest2(dd1,dd2);
         xlabel('Clustering Coefficient'); ylabel('Frequency')
         title([num2str(pcmp) ' thr: Clustering Coefficient Distributions: KS test p = ' num2str(ksp)])
-        legend({lb1,lb2},'Location','best')
+        legend({lb1,lb2},'Location','northeastoutside')
 
         filename = fullfile(outdir, ['clust_coef_dist_' lb1 '_v_' lb2 '_netw_pthr' num2str(pcmp) '.pdf']);
         print(gcf,'-dpdf',filename)
         clear filename dd1 dd2 lb1 lb2
     end
-    clear pcmp
+    clear pcmp mxidx hmax
 end
 close all
 end
