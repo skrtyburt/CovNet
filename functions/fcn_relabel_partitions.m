@@ -1,4 +1,5 @@
 function cinew = fcn_relabel_partitions(ci)
+%Author: Richard Betzel, Indiana University
 [n,m] = size(ci);
 
 cinew = zeros(n,m);

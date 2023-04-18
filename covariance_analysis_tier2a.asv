@@ -5,7 +5,6 @@ narginchk(2,4)
 %                 matlab structure.
 %   g2t1_struct - output from the tier 1 script for group 2 loaded into a
 %                 matlab structure.
-% optional:
 %   cmask       - Binary matrix equal in size to data elements in the cellData
 %                 that was used as tier1 input. It is used to isolate subsets of groups
 %                 to be analyzed.
@@ -78,13 +77,15 @@ if ~exist(outdir,'dir')
     mkdir(outdir)
 end
 %%
-for p=1:length(pidx) % for every p-value
+for p=1:length(pidx)
     pcmp = g1t1_struct.pval(pidx(p));
-    d1 = g1t1_struct.density(pidx(p),:);
-    d2 = g2t1_struct.density(pidx(p),:);
-
-%% pairwise comparison of edge distribution between g1 and g2
-
+    d = unique(g1t1_struct.density(pidx(p),:));
+    d2 = unique(g2t1_struct.density(pidx(p),:));
+    if length(d) == 1 && length(d) == length(d2)
+        disp('Equal densities across groups and conditions.'); dcase = 1;
+    else
+        disp('Variance in network densities found.'); dcase = 2;
+    end
 
 %% compare nodal degree distributions
 nbins = 5;
@@ -118,6 +119,7 @@ nbins = 5;
 
 
 %% compare positive strength distributions
+
    
     mxidx = max([max(max(g1t1_struct.posStrength(:,pidx(p),:))) max(max(g2t1_struct.posStrength(:,pidx(p),:)))]);
     for ll=1:length(lidx)
@@ -149,6 +151,7 @@ nbins = 5;
 
 
 %% compare negative strength distributions
+
     
     mxidx = max([max(max(g1t1_struct.negStrength(:,pidx(p),:))) max(max(g2t1_struct.negStrength(:,pidx(p),:)))]);
     for ll=1:length(lidx)
