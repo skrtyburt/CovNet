@@ -108,7 +108,7 @@ for ix = 1:length(grp)
     [~,p,ks]=kstest2(rVec1(:,ix),rVec2(:,ix));
     title([grp{ix} ': ks=' num2str(ks) ' p=' num2str(p)])
 end
-title(t,comp)
+title(t,[comp ' Edge Weight Distributions'])
 print(f,'-dpdf',[outroot '/' comp '_edge_histograms.pdf'])
 
 %% pairwise comparisons of edge-level differences
@@ -183,8 +183,10 @@ for p=1:length(pidx) % for every p-value
     print(f,'-dpdf',filename)
     clear mxidx hmax filename
 end
+
 %% compare positive strength distributions
 for p=1:length(pidx) % for every p-value
+    pcmp = g1t1_struct.pval(pidx(p));
     mxidx = max([max(max(g1t1_struct.posStrength(:,pidx(p),:))) max(max(g2t1_struct.posStrength(:,pidx(p),:)))]);
     for ll=1:length(lidx)
         hmax(ll,1) = max(histcounts(g1t1_struct.posStrength(:,pidx(p),lidx(ll)),Nbins));
@@ -212,70 +214,75 @@ for p=1:length(pidx) % for every p-value
     end
     title(t,{[comp ' Positive Strength Distributions'], ['network threshold p<' num2str(pcmp)]})
     filename = fullfile(outdir, ['Pos_strength_' comp '_netw_pthr' num2str(pcmp) '.pdf']);
-    % print(f,'-dpdf',filename)
+    print(f,'-dpdf',filename)
     clear mxidx hmax filename 
 end
 
-
 %% compare negative strength distributions
-    
+for p=1:length(pidx) % for every p-value
+    pcmp = g1t1_struct.pval(pidx(p));
     mxidx = max([max(max(g1t1_struct.negStrength(:,pidx(p),:))) max(max(g2t1_struct.negStrength(:,pidx(p),:)))]);
     for ll=1:length(lidx)
-        hmax(ll,1) = max(histcounts(g1t1_struct.negStrength(:,pidx(p),lidx(ll)),nbins));
-        hmax(ll,2) = max(histcounts(g2t1_struct.negStrength(:,pidx(p),lidx(ll)),nbins));
+        hmax(ll,1) = max(histcounts(g1t1_struct.negStrength(:,pidx(p),lidx(ll)),Nbins));
+        hmax(ll,2) = max(histcounts(g2t1_struct.negStrength(:,pidx(p),lidx(ll)),Nbins));
     end
     hmax = max(max(hmax));
+    f = figure('units','inches','position',[1 1 10.5 6],'PaperOrientation','landscape');
+    t = tiledlayout('flow');
     for ll=1:length(lidx)
+        nexttile
         dd1 = g1t1_struct.negStrength(:,pidx(p),lidx(ll));
-        lb1 = [g1t1_struct.grp '-' g1t1_struct.labels{lidx(ll)}];
         dd2 = g2t1_struct.negStrength(:,pidx(p),lidx(ll));
-        lb2 = [g2t1_struct.grp '-' g2t1_struct.labels{lidx(ll)}];
-        figure;
-        histogram(dd1,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',nbins)
+   
+        histogram(dd1,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',Nbins)
         hold on
-        histogram(dd2,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',nbins)
+        histogram(dd2,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',Nbins)
         xlim([0 mxidx+1]); xticks(0:2:mxidx+1)
         ylim([0 hmax+1]); yticks(0:2:hmax+1)
         [~,ksp]=kstest2(dd1,dd2);
         xlabel('Negative Strength'); ylabel('Frequency')
-        title([num2str(pcmp) ' thr: Negative Strength Distributions: KS test p = ' num2str(ksp)])
-        legend({lb1,lb2},'Location','northeastoutside')
-
-        filename = fullfile(outdir, ['neg_strength_dist_' lb1 '_v_' lb2 '_netw_pthr' num2str(pcmp) '.pdf']);
-        print(gcf,'-dpdf',filename)
-        clear filename dd1 dd2 lb1 lb2
+        [tl,~]=title({grp{ll}, 'Negative Strength Distributions',['KS test p = ' num2str(ksp)]});
+        tl.FontSize=10;
+        legend({g1t1_struct.grp,g2t1_struct.grp},'Location','northeast')
+        clear dd1 dd2
     end
-    clear mxidx hmax
-
+    title(t,{[comp ' Negative Strength Distributions'], ['network threshold p<' num2str(pcmp)]})
+    filename = fullfile(outdir, ['Neg_strength_' comp '_netw_pthr' num2str(pcmp) '.pdf']);
+    print(f,'-dpdf',filename)
+    clear mxidx hmax filename 
+end
 
 %% compare clustering coefficient distributions
-
-    
+for p=1:length(pidx) % for every p-value
+    pcmp = g1t1_struct.pval(pidx(p));
     mxidx = max([max(max(g1t1_struct.clust_coef(:,pidx(p),:))) max(max(g2t1_struct.clust_coef(:,pidx(p),:)))]);
     for ll=1:length(lidx)
-        hmax(ll,1) = max(histcounts(g1t1_struct.clust_coef(:,pidx(p),lidx(ll)),nbins));
-        hmax(ll,2) = max(histcounts(g2t1_struct.clust_coef(:,pidx(p),lidx(ll)),nbins));
+        hmax(ll,1) = max(histcounts(g1t1_struct.clust_coef(:,pidx(p),lidx(ll)),Nbins));
+        hmax(ll,2) = max(histcounts(g2t1_struct.clust_coef(:,pidx(p),lidx(ll)),Nbins));
     end
     hmax = max(max(hmax));
+    f = figure('units','inches','position',[1 1 10.5 6],'PaperOrientation','landscape');
+    t = tiledlayout('flow');
     for ll=1:length(lidx)
+        nexttile
         dd1 = g1t1_struct.clust_coef(:,pidx(p),lidx(ll));
-        lb1 = [g1t1_struct.grp '-' g1t1_struct.labels{lidx(ll)}];
         dd2 = g2t1_struct.clust_coef(:,pidx(p),lidx(ll));
-        lb2 = [g2t1_struct.grp '-' g2t1_struct.labels{lidx(ll)}];
-        figure;
-        histogram(dd1,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',nbins)
+        
+        histogram(dd1,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',Nbins)
         hold on
-        histogram(dd2,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',nbins)
-        xlim([0 mxidx+1]); xticks(0:2:mxidx+1)
+        histogram(dd2,'DisplayStyle','stairs','EdgeAlpha',.5,'LineWidth',2,'NumBins',Nbins)
+        xlim([0 mxidx]); xticks(0:.2:mxidx)
         ylim([0 hmax+1]); yticks(0:2:hmax+1)
         [~,ksp]=kstest2(dd1,dd2);
         xlabel('Clustering Coefficient'); ylabel('Frequency')
-        title([num2str(pcmp) ' thr: Clustering Coefficient Distributions: KS test p = ' num2str(ksp)])
-        legend({lb1,lb2},'Location','northeastoutside')
-
-        filename = fullfile(outdir, ['clust_coef_dist_' lb1 '_v_' lb2 '_netw_pthr' num2str(pcmp) '.pdf']);
-        print(gcf,'-dpdf',filename)
-        clear filename dd1 dd2 lb1 lb2
+        [tl,~]=title({grp{ll}, 'Clustering Coefficient Distributions',['KS test p = ' num2str(ksp)]});
+        tl.FontSize=10;
+        legend({g1t1_struct.grp,g2t1_struct.grp},'Location','northeast')
+        clear dd1 dd2
     end
-    clear pcmp mxidx hmax
+    title(t,{[comp ' Clustering Coefficient Distributions'], ['network threshold p<' num2str(pcmp)]})
+    filename = fullfile(outdir, ['clust_coef_dist_' comp '_netw_pthr' num2str(pcmp) '.pdf']);
+    print(f,'-dpdf',filename)
+    clear mxidx hmax filename 
 end
+close all
