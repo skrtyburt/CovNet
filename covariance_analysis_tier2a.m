@@ -1,8 +1,19 @@
 function covariance_analysis_tier2a(g1t1_struct,g2t1_struct,cmask,pthresh)
-
-% Group comparisons of tier1 outputs within factor levels.
-nbins = 5;
 narginchk(2,4)
+% Input
+%   g1t1_struct - output from the tier 1 script for group 1 loaded into a 
+%                 matlab structure.
+%   g2t1_struct - output from the tier 1 script for group 2 loaded into a
+%                 matlab structure.
+% optional:
+%   cmask       - Binary matrix equal in size to data elements in the cellData
+%                 that was used as tier1 input. It is used to isolate subsets of groups
+%                 to be analyzed.
+%   pval        - p-values for threholded networks examined in tier1 to be
+%                 compared here.
+%
+% Author: Evgeny Chumin (2023), Indiana University
+%%
 % check to make sure inputs are structures
 if ~isstruct(g1t1_struct) || ~isstruct(g2t1_struct)
     fprintf(2,'input group tier1 outputs are not structures. Exiting...\n')
@@ -19,7 +30,6 @@ if g1t1_struct.N ~= g2t1_struct.N
     fprintf(2,'Number of nodes does not match between inputs. Exiting...\n')
     return
 end
-
 % optional cmask should be the same size as number of DATA cells in the
 % original input cell structure
 if exist('cmask','var')
@@ -49,7 +59,7 @@ if isempty(pidx)
     fprintf(2,'Input pthresh values not found in group data pvalue thresholds. Exiting...\n')
     return
 end
-
+%%
 % find cells from which to compute summary values
 lidx = find(cmask);
 
@@ -67,19 +77,17 @@ clear ver
 if ~exist(outdir,'dir')
     mkdir(outdir)
 end
-
-for p=1:length(pidx)
+%%
+for p=1:length(pidx) % for every p-value
     pcmp = g1t1_struct.pval(pidx(p));
-    d = unique(g1t1_struct.density(pidx(p),:));
-    d2 = unique(g2t1_struct.density(pidx(p),:));
-    if length(d) == 1 && length(d) == length(d2)
-        disp('Equal densities across groups and conditions.'); dcase = 1;
-    else
-        disp('Variance in network densities found.'); dcase = 2;
-    end
+    d1 = g1t1_struct.density(pidx(p),:);
+    d2 = g2t1_struct.density(pidx(p),:);
+
+%% pairwise comparison of edge distribution between g1 and g2
+
 
 %% compare nodal degree distributions
-
+nbins = 5;
     mxidx = max([max(max(g1t1_struct.degree(:,pidx(p),:))) max(max(g2t1_struct.degree(:,pidx(p),:)))]);
     for ll=1:length(lidx)
         hmax(ll,1) = max(histcounts(g1t1_struct.degree(:,pidx(p),lidx(ll)),nbins));
@@ -110,7 +118,6 @@ for p=1:length(pidx)
 
 
 %% compare positive strength distributions
-
    
     mxidx = max([max(max(g1t1_struct.posStrength(:,pidx(p),:))) max(max(g2t1_struct.posStrength(:,pidx(p),:)))]);
     for ll=1:length(lidx)
@@ -142,7 +149,6 @@ for p=1:length(pidx)
 
 
 %% compare negative strength distributions
-
     
     mxidx = max([max(max(g1t1_struct.negStrength(:,pidx(p),:))) max(max(g2t1_struct.negStrength(:,pidx(p),:)))]);
     for ll=1:length(lidx)
