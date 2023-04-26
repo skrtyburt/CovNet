@@ -4,12 +4,12 @@ narginchk(2,4)
 
 % check comm structure
  if ~isstruct(tier1_out_group1)
-    fprintf(2,'tier1_out is not a structure. Exiting...')
+    fprintf(2,'tier1_out is not a structure. Exiting...\n')
     return
  end
 % check node size vs size of community structure vector
 if tier1_out_group1.N ~= length(ci)
-    fprintf(2,'number of nodes does not match between inputs. Exiting...')
+    fprintf(2,'number of nodes does not match between inputs. Exiting...\n')
     return
 end
 % make sure communities are linearly indexed
@@ -22,7 +22,7 @@ end
 if exist('cmask','var')
     [r,c]=size(cmask);
     if r ~= tier1_out_group1.Nr-1 || c ~= tier1_out_group1.Nc-1
-        fprintf(2,'size of cmask does not match size data cells')
+        fprintf(2,'size of cmask does not match size data cells\n')
         return
     end
 else

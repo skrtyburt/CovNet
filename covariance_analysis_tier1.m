@@ -1,5 +1,5 @@
-function covariance_analysis_tier1(cellData,ROIlabels,cmap,pval)
-narginchk(4,4)
+function covariance_analysis_tier1(cellData,ROIlabels,cmap,pval,covariates)
+narginchk(4,5)
 % Input 
 %   cellData - cell variable where rows and columns are grouping variables
 %              (i.e. age or sex) for a group (i.e. control or mutant).
@@ -16,6 +16,11 @@ narginchk(4,4)
 %
 %   pval - a single or range of p-values for edge level thresholding of
 %   networks, based on permutation testing of significance of correlations
+%
+%   covariates - a cell structure same size as cellData with the same
+%   labels in first row/column, where data are organized in the same order
+%   as cell data: each row is a covaraite with subjects in columns ordered
+%   the same as in cellData
 %
 % Output
 %
@@ -73,8 +78,14 @@ end
 for r=2:Nr % every row
     for c=2:Nc % every column
         % generate covariance matrices
-        [covMat{r,c}, cov_paramP{r,c}]=covariance(cellData{r,c},1,ROIlabels,[-1 1],cmap);
-        sgtitle([grp ' ' cellData{r,1} ' ' cellData{1,c}])
+        if exist('covariates','var')
+            [covMat{r,c}, cov_paramP{r,c}]=covariance(cellData{r,c},1,covariates{r,c},ROIlabels,[-1 1],cmap);
+            sgtitle([grp ' ' cellData{r,1} ' ' cellData{1,c} ' partialCorr'])
+        else
+            [covMat{r,c}, cov_paramP{r,c}]=covariance(cellData{r,c},1,ROIlabels,[-1 1],cmap);
+            sgtitle([grp ' ' cellData{r,1} ' ' cellData{1,c}])
+        end
+        
         filename = fullfile(outdir, ['covMat_' grp '_' cellData{r,1} '_' cellData{1,c} '.pdf']);
         print(gcf,'-dpdf',filename)
         clear filename
@@ -90,7 +101,11 @@ close all
 cov_permP = rNames;    cov_permP(1,1:Nc) = cNames;    % permutation p value matrices
 for r=2:Nr % every row
     for c=2:Nc % every column
-        [~,~,cov_permP{r,c}] = randshiftnull_cov(cellData{r,c},10000);
+        if exist('covariates','var')
+            [~,~,cov_permP{r,c}] = randshiftnull_cov(cellData{r,c},10000,covariates{r,c});
+        else
+            [~,~,cov_permP{r,c}] = randshiftnull_cov(cellData{r,c},10000);
+        end
     end
 end
 
@@ -110,6 +125,7 @@ for r=2:Nr % every row
         clear filename
     end
 end
+close all
 
 %% Compare partitions - adjusted mutual information
 
@@ -189,41 +205,38 @@ for r = 2:Nr % loop over age
     end
 end
 
-%% test differences across within leves (ie along rows/columns)
+%% test differences across within levels (ie along rows/columns)
+
+% pairwise testing of edge-level differences
+
 % start with comparisons across columns
-nc = Nc-1; % minus one for labels column
-row_comparisons{1,1} = grp;
-col_comparisons{1,1} = grp;
-switch nc
-    case 1
-        fprinf(2,'Only one column in cell data. Nothing to compare.\n')
-    case 2
-        for r = 2:Nr
-            row_comparisons{1,2} = 'perm_ttest_pval';
-            row_comparisons{r,1} = [rNames{r} '_' cNames{1} ' vs. ' rNames{r} '_' cNames{2}];  
-            row_comparisons{r,2} = perm_ttest2_cov(cellData{r,2},cellData{r,3},10000);
-        end
-    case 3
-        fprintf('Work in Progress. How do you compare 3 networks for a main effect?\n')
-    otherwise
-        fprintf(2,'Cannot handle more that 3 levels.\nLets work together to add functionality!\n')
+if Nc>2
+    m = nchoosek(2:Nc,2);
+    row_comparisons{1,1} = grp;
+    for ii=2:Nr
+    for jj=1:size(m,1)
+        row_comparisons{1,2} = 'perm_ttest_pval';
+        row_comparisons{end+1,1} = [rNames{ii} '_' cNames{m(jj,1)} ' vs. ' rNames{ii} '_' cNames{m(jj,2)}];  
+        row_comparisons{end,2} = perm_ttest2_cov(cellData{ii,m(jj,1)},cellData{ii,m(jj,2)},10000);
+    end
+    end
+else 
+    row_comparisons = [];
 end
 
-% now the row comparisons
-nc = Nr-1;
-switch nc 
-    case 1
-        fprinf(2,'Only one row in cell data. Nothing to compare.\n')
-    case 2
-        for c = 2:Nc
-            col_comparisons{1,2} = 'perm_ttest_pval';
-            col_comparisons{c,1} = [cNames{c} '_' rNames{1} ' vs. ' cNames{c} '_' rNames{2}];  
-            col_comparisons{c,2} = perm_ttest2_cov(cellData{2,c},cellData{3,c},10000);
-        end
-    case 3
-        fprintf('Work in Progress. How do you compare 3 networks for a main effect?\n')
-    otherwise
-        fprintf(2,'Cannot handle more that 3 levels.\nLets work together to add functionality!\n')
+% now comparisons across rows
+if Nr>2
+    m = nchoosek(2:Nr,2);
+    col_comparisons{1,1} = grp;
+    for ii=2:Nc
+    for jj=1:size(m,1)
+        col_comparisons{1,2} = 'perm_ttest_pval';
+        col_comparisons{end+1,1} = [cNames{ii} '_' rNames{m(jj,1)} ' vs. ' cNames{ii} '_' rNames{m(jj,2)}];  
+        col_comparisons{end,2} = perm_ttest2_cov(cellData{m(jj,1),ii},cellData{m(jj,2),ii},10000);
+    end
+    end
+else
+    col_comparisons = [];
 end
 
 %%
@@ -488,7 +501,8 @@ save(fileout,'adjMI','agrMat','allPartitions',...
     'covMat','grp','mrccPartition','N','nc','Nc','Nr','R','rNames','ROIlabels','S',...
     'col_comparisons','row_comparisons',...
     'clust_coef','degree','density','labels','max_component_size','min_component_size',...
-    'negStrength','posStrength','pval','thr_cov','totalPosStrength','totalNegStrength')
+    'negStrength','posStrength','pval','thr_cov','totalPosStrength','totalNegStrength',...
+    'covariates')
 close all
 
 
