@@ -1,5 +1,5 @@
-function covariance_analysis_tier1(cellData,ROIlabels,cmap,pval)
-narginchk(4,4)
+function covariance_analysis_tier1(cellData,ROIlabels,cmap,pval,covariates)
+narginchk(4,5)
 % Input 
 %   cellData - cell variable where rows and columns are grouping variables
 %              (i.e. age or sex) for a group (i.e. control or mutant).
@@ -16,6 +16,14 @@ narginchk(4,4)
 %
 %   pval - a single or range of p-values for edge level thresholding of
 %   networks, based on permutation testing of significance of correlations
+%
+%   covariates - a cell structure same size as cellData with the same
+%   labels in first row/column, where data are organized in the same order
+%   as cell data: each row is a covaraite with subjects in columns ordered
+%   the same as in cellData
+%
+% Output
+%
 %
 % Version Control:
 % Original version - Evgeny Chumin, Indiana University, 2022
@@ -71,8 +79,14 @@ end
 for r=2:Nr % every row
     for c=2:Nc % every column
         % generate covariance matrices
-        [covMat{r,c}, cov_paramP{r,c}]=covariance(cellData{r,c},1,ROIlabels,[-1 1],cmap);
-        sgtitle([grp ' ' cellData{r,1} ' ' cellData{1,c}])
+        if exist('covariates','var')
+            [covMat{r,c}, cov_paramP{r,c}]=covariance(cellData{r,c},1,covariates{r,c},ROIlabels,[-1 1],cmap);
+            sgtitle([grp ' ' cellData{r,1} ' ' cellData{1,c} ' partialCorr'])
+        else
+            [covMat{r,c}, cov_paramP{r,c}]=covariance(cellData{r,c},1,ROIlabels,[-1 1],cmap);
+            sgtitle([grp ' ' cellData{r,1} ' ' cellData{1,c}])
+        end
+        
         filename = fullfile(outdir, ['covMat_' grp '_' cellData{r,1} '_' cellData{1,c} '.pdf']);
         print(gcf,'-dpdf',filename)
         clear filename
@@ -88,7 +102,11 @@ close all
 cov_permP = rNames;    cov_permP(1,1:Nc) = cNames;    % permutation p value matrices
 for r=2:Nr % every row
     for c=2:Nc % every column
-        [~,~,cov_permP{r,c}] = randshiftnull_cov(cellData{r,c},10000);
+        if exist('covariates','var')
+            [~,~,cov_permP{r,c}] = randshiftnull_cov(cellData{r,c},10000,covariates{r,c});
+        else
+            [~,~,cov_permP{r,c}] = randshiftnull_cov(cellData{r,c},10000);
+        end
     end
 end
 
@@ -481,7 +499,8 @@ save(fileout,'adjMI','agrMat','allPartitions',...
     'covMat','grp','mrccPartition','N','nc','Nc','Nr','R','rNames','ROIlabels','S',...
     'PairwisePermTests',...
     'clust_coef','degree','density','labels','max_component_size','min_component_size',...
-    'negStrength','posStrength','pval','thr_cov','totalPosStrength','totalNegStrength')
+    'negStrength','posStrength','pval','thr_cov','totalPosStrength','totalNegStrength',...
+    'covariates')
 close all
 
 
