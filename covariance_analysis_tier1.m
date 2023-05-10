@@ -64,6 +64,7 @@ cov_paramP = rNames;    cov_paramP(1,1:Nc) = cNames;    % parametric p value mat
 
 outroot = ['ca_tier1_figures_' grp];
 
+% append repeated runs numerically
 ver = length(dir(fullfile(pwd,[outroot '*'])));
 if ver == 0
     outdir = fullfile(pwd,outroot);
@@ -92,10 +93,10 @@ for r=2:Nr % every row
     end
 end
 close all
-% Parametric p-values of correlation significance are saved for
-% completeness, but the recommended methods for identifying signifance edge
-% covariance is permutations testing.
 
+% Parametric p-values of correlation significance are saved for
+% completeness, but the recommended method for identifying signifant edge
+% covariance is permutation testing.
 %% Permutation testing of significant edge covariance 
 % 10,000 permutations
 cov_permP = rNames;    cov_permP(1,1:Nc) = cNames;    % permutation p value matrices
@@ -128,7 +129,6 @@ end
 close all
 
 %% Compare partitions - adjusted mutual information
-
 adjMI = double.empty;
 ci = 0; % counting indices
 for c=2:Nc % every column (g1)
@@ -157,6 +157,7 @@ figure(...
         'paperpositionmode','auto');
 %%------------------------%%
 imagesc(adjMI); axis square
+colormap(cmap(33:end,:))
 yticks(1:1:cii); yticklabels(cons_labels)
 xticks(1:1:cii); xticklabels(cons_labels); xtickangle(45)
 title(['Adjusted Mutual Information - ' grp])
@@ -238,256 +239,261 @@ if Nr>2
 else
     col_comparisons = [];
 end
-
+clear counter
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% for every selected p-value threshold
 np = length(pval);
-% number of significant edges at permutation p-value threshold 
+%% Create the thresholded covaraince matrices
 for p=1:np
-if np==1
-    plab = ['pval_' num2str(pval)];
-else
-    plab = ['pval_range_' num2str(max(pval)) '_' num2str(min(pval))];
-end
-cnt=0;
-for i=2:size(covMat,2)
-    for j=2:size(covMat,1)
-        cnt=cnt+1;
-        mask = logical(cov_permP{j,i}>pval(p));       % binary mask of NONsignificant edges
-        mat = covMat{j,i};                                   % pull out covariance matrix
-        mat(mask)=0;                                    % zero edged great than pval
-        mat(logical(eye(length(mat))))=0;               % zero the diagonal (self connections)
-        thr_cov(:,:,p,cnt) = mat;                       % store thresholded covariance matrix
-        if p ==1 % store labels on first pass
-            labels{cnt} = [rNames{j} '-' cNames{i}];% store labels
+    cnt=0;
+    for r=2:Nr
+        for c=2:Nc
+            cnt=cnt+1;
+            mask = logical(cov_permP{r,c}>pval(p));     % binary mask of NONsignificant edges
+            mat = covMat{r,c};                          % pull out covariance matrix
+            if p==1
+                cov(:,:,cnt) = mat;                     % save covmat for later analysis
+            end
+            mat(mask)=0;                                % zero edges greater than pval
+            mat(logical(eye(length(mat))))=0;           % zero the diagonal (self connections)
+            thr_cov(:,:,p,cnt) = mat;                   % store thresholded covariance matrix
+            if p ==1 % store labels on first pass
+                labels{cnt} = [rNames{r} '-' cNames{c}];% store labels
+            end
+            clear mask mat
         end
-        clear mask mat
+    end
+%% Plot the thresholded covariance matrices
+    figure('Units','inches','Position',[1 1 8 4])
+    tiledlayout('flow')
+    for i = 1:cnt
+        nexttile
+        imagesc(thr_cov(:,:,p,i)); axis square
+        caxis([-1 1]); colormap(cmap)
+        xticks(1:1:N); yticks(1:1:N);
+        yticklabels(ROIlabels); xticklabels(ROIlabels); xtickangle(45)
+        title(labels{i})
+        colorbar
+    end
+    sgtitle({[grp ' Thresholded Covariance at perm p < ' num2str(pval(p))], ' '})
+    filename = fullfile(outdir, ['thresh_covMats_' grp '_p' num2str(pval(p)) '.pdf']);
+    print(gcf,'-dpdf',filename)
+    clear filename
+end
+
+%% Compute global and regional network metrics
+[~,~,np,ng]=size(thr_cov);
+% build p-value labels
+for p=1:np
+    plabs{p}=['p<' num2str(pval(p))];
+end
+p_range = [num2str(max(pval)) '-' num2str(min(pval))];
+%% Density
+% only applies to thresholded networks
+for p=1:np
+    for g=1:ng
+        density(p,g) = density_und(thr_cov(:,:,p,g));
+    end
+end
+f=figure(...
+        'units','inches',...
+        'position',[1 1 5 4],...
+        'paperpositionmode','auto');
+bar(density); xticklabels(plabs); ylim([0 1]); ylabel('Network Density')
+legend(labels,'Location','eastoutside')
+filename = fullfile(outdir, ['netwDensity_' grp '_' p_range '.pdf']);
+print(f,'-dpdf',filename)
+clear filename f
+
+%% Degree
+% only applies to thresholded networks
+for p=1:np
+    for g=1:ng
+        degree(:,p,g) = degrees_und(thr_cov(:,:,p,g));
     end
 end
 
-figure('Units','inches','Position',[1 1 8 4])
-tiledlayout('flow')
-for i = 1:cnt
-    nexttile
-    imagesc(thr_cov(:,:,p,i)); axis square
-    caxis([-1 1]); colormap(cmap)
-    xticks([]); yticks([])
-    title(labels{i})
-    colorbar
-end
-sgtitle([grp ' Thresholded Covariance at perm p < ' num2str(pval(p))])
-filename = fullfile(outdir, ['thresh_covMats_' grp '_p' num2str(pval(p)) '.pdf']);
-print(gcf,'-dpdf',filename)
-clear filename
-
-for i=1:cnt
-    density(p,i) = density_und(thr_cov(:,:,p,i));
-    [posStrength(:,p,i),negStrength(:,p,i),totalPosStrength(p,i),totalNegStrength(p,i)]...
-        = strengths_und_sign(thr_cov(:,:,p,i));
-    degree(:,p,i) = degrees_und(thr_cov(:,:,p,i));
-    [~,cpsz] = get_components(double(thr_cov(:,:,p,i)~=0));
-    max_component_size(p,i) = max(cpsz);
-    min_component_size(p,i) = min(cpsz);
-    [clust_coef(:,p,i)] = clustering_coef_wu_sign(thr_cov(:,:,p,i),3);
+f = figure('Units','inches','Position',[1 1 8 4]);
+degvec=double.empty;
+deggrp=double.empty;
+idx=1;
+boxlabs=cell.empty;
+for p=1:np
+    for g=1:length(labels)
+        degvec = vertcat(degvec,degree(:,p,g));
+        deggrp = vertcat(deggrp,zeros(N,1)+idx);
+        idx=idx+1;
+    end
+    degvec(end+1,1)=nan;
+    deggrp(end+1,1)=idx;
+    idx=idx+1;
+    boxlabs = horzcat(boxlabs,labels,' ');
 end
 
+boxplot(degvec,deggrp)
+xticklabels(boxlabs)
+ylabel('Degree Distribution'); ylim([0 N])
+box off
+for p=1:np
+    text((length(labels)+1)/2+length(labels)*(p-1),N-1,plabs{p})
 end
+title({[grp ' group Degree across p-value range: '], p_range})
 
-% set plotting type depending on whether its a single p-value or a range
-if np>1
-    pt = 0; else; pt = 1;
-end
-
-%% Density
-figure
-switch pt
-    case 1
-        bar(density); xticklabels(labels); ylabel('Network Density')
-        title([grp ' group Density at P < ' num2str(pval)])
-        xticks(1:1:length(density)); xticklabels(labels)
-    case 0
-        plot(density)
-        legend(labels,'Location','best')
-        xticks(1:1:np); xticklabels(pval); xlabel('permutation p-value threshold') 
-        ylabel('Network Density')
-        title([grp ' group Density across p-value range'])
-end
-filename = fullfile(outdir, ['netwDensity_' grp '_' plab '.pdf']);
-print(gcf,'-dpdf',filename)
-clear filename
-
-%% Degree
-switch pt
-    case 1
-        figure
-        boxplot(squeeze(degree)); xticklabels(labels); ylabel('Degree Distribution')
-        title([grp ' group Degree at P < ' num2str(pval)])
-    case 0
-        figure('Units','inches','Position',[1 1 8 4])
-        idx=0;
-        gvec = double.empty;
-        degreevec = double.empty;
-        for i=1:length(labels)
-            d = degree(:,:,i);
-            d = reshape(d,[],1);
-            degreevec=vertcat(degreevec,d);
-            clear d
-            for j=1:np
-                idx=idx+1;
-                gv = zeros(size(degree,1),1)+idx;
-                gvec = vertcat(gvec,gv);
-                clear gv
-            end
-            idx=idx+1;
-            m(1,i) = idx-(Nr-1);
-            if i~=length(labels)
-                degreevec(end+1,1)=nan;
-                gvec(end+1,1) = idx;
-            end
-        end
-        boxplot(degreevec,gvec)
-        xticks(m); xticklabels(labels)
-        ylabel('Degree Distribution')
-        title({[grp ' group Degree across p-value range: '], num2str(pval)})
-end
-filename = fullfile(outdir, ['netwDegree_' grp '_' plab '.pdf']);
-print(gcf,'-dpdf',filename)
-clear filename
+filename = fullfile(outdir, ['netwDegree_' grp '_' p_range '.pdf']);
+print(f,'-dpdf',filename)
+clear filename f
 
 %% Strength
-switch pt
-    case 1
-        figure
-        subplot(2,2,1)
-        bar(totalPosStrength); xticklabels(labels); ylabel('Sum Positive Nodal Strength')
-        title('Positive Strength')
-        subplot(2,2,2)
-        bar(totalNegStrength); xticklabels(labels); ylabel('Sum Negative Nodal Strength')
-        title('Negative Strength')
-        subplot(2,2,3)
-        boxplot(squeeze(posStrength)); xticklabels(labels); ylabel('Positive Nodal Strength Distribution')
-        subplot(2,2,4)
-        boxplot(squeeze(negStrength)); xticklabels(labels); ylabel('Negative Nodal Strength Distribution')
-        sgtitle([grp ' group Nodal and Cumulative Strength at P < ' num2str(pval)])
-
-        filename = fullfile(outdir, ['netwStrength_' grp '_' plab '.pdf']);
-        print(gcf,'-dpdf',filename)
-        clear filename
-    case 0
-        figure('Units','inches','Position',[1 1 8 4])
-        subplot(1,2,1)
-        plot(totalPosStrength)
-        legend(labels,'Location','best')
-        xticks(1:1:np); xticklabels(pval); xlabel('permutation p-value threshold') 
-        ylabel('Sum Positive Strength')
-        subplot(1,2,2)
-        plot(totalNegStrength)
-        legend(labels,'Location','best')
-        xticks(1:1:np); xticklabels(pval); xlabel('permutation p-value threshold')
-        ylabel('Sum Negative Strength')
-        sgtitle({[grp ' group Cumulative Strength across p-value range:'],num2str(pval)})
-        
-        filename = fullfile(outdir, ['netwTotalStrength_' grp '_' plab '.pdf']);
-        print(gcf,'-dpdf',filename)
-        clear filename
-
-        idx=0;
-        psvec = double.empty;
-        nsvec = double.empty;
-        for i=1:length(labels)
-            ps = posStrength(:,:,i); ps = reshape(ps,[],1);
-            ns = negStrength(:,:,i); ns = reshape(ns,[],1);
-            psvec=vertcat(psvec,ps); nsvec=vertcat(nsvec,ns);
-            clear ps ns
-            idx=idx+1+np;
-            if i~=length(labels)
-                psvec(end+1,1)=nan;
-                nsvec(end+1,1)=nan;
-            end
-        end
-        figure('Units','inches','Position',[1 1 8 8])
-        subplot(2,2,1:2)
-        boxplot(psvec,gvec)
-        xticks(m); xticklabels(labels)
-        ylabel('Positive Nodal Strength')
-        subplot(2,2,3:4)
-        boxplot(nsvec,gvec)
-        xticks(m); xticklabels(labels)
-        ylabel('Negative Nodal Strength')
-        sgtitle({[grp ' group Strength across p-value range: '], num2str(pval)})
-
-        filename = fullfile(outdir, ['netwNodalStrength_' grp '_' plab '.pdf']);
-        print(gcf,'-dpdf',filename)
-        clear filename
+% applies to both unthresholded and thresholded networks
+% compute from unthresholded networks
+for g=1:ng
+    [posStrength(:,1,g),negStrength(:,1,g),totalPosStrength(1,g),totalNegStrength(1,g)]...
+        = strengths_und_sign(cov(:,:,g));
 end
+% Compute from thresholded networks
+for p=1:np
+    for g=1:ng
+        [posStrength(:,p+1,g),negStrength(:,p+1,g),totalPosStrength(p+1,g),totalNegStrength(p+1,g)]...
+            = strengths_und_sign(thr_cov(:,:,p,g));
+    end
+end
+
+% Format for boxplots
+posSvec=double.empty;
+negSvec=double.empty;
+STRgrp=double.empty;
+idx=1;
+boxSTRlabs=cell.empty;
+for p=1:np+1
+    for g=1:length(labels)
+        posSvec = vertcat(posSvec,posStrength(:,p,g));
+        negSvec = vertcat(negSvec,negStrength(:,p,g));
+        STRgrp = vertcat(STRgrp,zeros(N,1)+idx);
+        idx=idx+1;
+    end
+    posSvec(end+1,1)=nan;
+    negSvec(end+1,1)=nan;
+    STRgrp(end+1,1)=idx;
+    idx=idx+1;
+    boxSTRlabs = horzcat(boxSTRlabs,labels,' ');
+end
+STRplabs=horzcat({'unthesholded'},plabs);
+
+% PLOT: Nodal positive strength
+f = figure('Units','inches','Position',[1 1 8 4]);
+upr = max(posSvec)+.1*max(posSvec);
+boxplot(posSvec,STRgrp)
+xticklabels(boxSTRlabs)
+ylabel('Nodal Postive Strengths'); ylim([0 upr])
+box off
+for p=1:np+1
+    text((length(labels)+1)/2+length(labels)*(p-1),upr-(.02*upr),STRplabs{p})
+end
+title({[grp ' Nodal Positive Strength across p-value range: '], p_range})
+filename = fullfile(outdir, ['nodePosStrength_' grp '_' p_range '.pdf']);
+print(f,'-dpdf',filename)
+clear filename f
+
+% PLOT: Nodal negative strength
+f = figure('Units','inches','Position',[1 1 8 4]);
+upr = max(negSvec)+.1*max(negSvec);
+boxplot(negSvec,STRgrp)
+xticklabels(boxSTRlabs)
+ylabel('Nodal Negative Strengths'); ylim([0 upr])
+box off
+for p=1:np+1
+    text((length(labels)+1)/2+length(labels)*(p-1),upr-(.02*upr),STRplabs{p})
+end
+title({[grp ' Nodal Negative Strength across p-value range: '], p_range})
+filename = fullfile(outdir, ['nodeNegStrength_' grp '_' p_range '.pdf']);
+print(f,'-dpdf',filename)
+clear filename f
+
+% PLOT: Total positive Strength
+f=figure(...
+        'units','inches',...
+        'position',[1 1 5 4],...
+        'paperpositionmode','auto');
+bar(totalPosStrength); xticklabels(STRplabs); ylabel('Total Positive Strength')
+legend(labels,'Location','eastoutside')
+filename = fullfile(outdir, ['totPosStrength_' grp '_' p_range '.pdf']);
+print(f,'-dpdf',filename)
+clear filename f
+
+% PLOT: Total negative Strength
+f=figure(...
+        'units','inches',...
+        'position',[1 1 5 4],...
+        'paperpositionmode','auto');
+bar(totalNegStrength); xticklabels(STRplabs); ylabel('Total Negative Strength')
+legend(labels,'Location','eastoutside')
+filename = fullfile(outdir, ['totNegStrength_' grp '_' p_range '.pdf']);
+print(f,'-dpdf',filename)
+clear filename f
        
 %% Largest Connectected Component
-switch pt
-    case 1
-        figure
-        subplot(1,2,1)
-        bar(max_component_size); xticklabels(labels); ylabel('Number of Nodes')
-        subplot(1,2,2)
-        idx = find(min_component_size==1);
-        if ~isempty(idx)
-            hold on
-            ylim([0 6]); yticks(1:1:6)
-            xticks([])
-            yticklabels(labels)
-            for i=1:length(idx)
-                text(0.1,idx(i),{'Contains fractured nodes of component size 1'})
-            end
-        end
-        sgtitle([grp ' group Largest Connected Component at P < ' num2str(pval)])
-    case 0
-        figure('Units','inches','Position',[1 1 8 4])
-        subplot(1,2,1)
-        plot(max_component_size)
-        legend(labels,'Location','best')
-        xticks(1:1:np); xticklabels(pval); xlabel('permutation p-value threshold')
-        ylabel('Number of nodes in largest component')
-        subplot(1,2,2)
-        idx = min_component_size==1;
-        imagesc(idx)
-        yticks(1:1:np); yticklabels(pval); ylabel('p-value threshold')
-        xticks(1:1:length(labels)); xticklabels(labels)
-        title('fractured node presence = 1')
-        colorbar
-        sgtitle([grp ' group Largest Connected Component across p-value range:'])
+% applies only to thresholded networks to find disconnected nodes/components
+for p=1:np
+    for g=1:ng
+        [~,cpsz] = get_components(double(thr_cov(:,:,p,g)~=0));
+        max_component_size(p,g) = max(cpsz);
+        min_component_size(p,g) = min(cpsz);
+        clear cpsz
+    end
 end
-filename = fullfile(outdir, ['netwLargestComponent_' grp '_' plab '.pdf']);
-print(gcf,'-dpdf',filename)
-clear filename
+f=figure(...
+        'units','inches',...
+        'position',[1 1 5 4],...
+        'paperpositionmode','auto');
+bar(min_component_size); xticklabels(plabs); ylim([0 N]); ylabel('Size of Smallest Connected Component')
+legend(labels,'Location','eastoutside')
+title({['Y < ' num2str(N) ' = Fractured Network'],...
+    'Y ==1 = Disconnected Node'})
+
+filename = fullfile(outdir, ['minConnectedComponent_' grp '_' p_range '.pdf']);
+print(f,'-dpdf',filename)
+clear filename f
+
 %% Clustering Coefficient
-switch pt
-    case 1
-        figure
-        boxplot(squeeze(clust_coef)); xticklabels(labels); ylabel('Clusterring Coefficient')
-        title([grp ' group Clustering Coefficient at P < ' num2str(pval)])
-    case 0
-        figure('Units','inches','Position',[1 1 8 4])
-        idx=0;
-      
-        ccvec = double.empty;
-        for i=1:length(labels)
-            cc = clust_coef(:,:,i);
-            cc = reshape(cc,[],1);
-            ccvec=vertcat(ccvec,cc);
-            clear cc
-            idx=idx+1+np;
-            if i~=length(labels)
-                ccvec(end+1,1)=nan;
-            end
-        end
-        boxplot(ccvec,gvec)
-        ylim([0 1])
-        xticks(m); xticklabels(labels)
-        ylabel('Clustering Coefficient')
-        title({[grp ' group Clustering Coefficient across p-value range: '], num2str(pval)})
+% The clustering coefficient variant used here can be applied to fully
+% connected and thresholded network. 
+for g=1:ng
+    [clust_coef(:,1,g)] = clustering_coef_wu_sign(cov(:,:,g),3);
 end
-filename = fullfile(outdir, ['netwClustCoef_' grp '_' plab '.pdf']);
-print(gcf,'-dpdf',filename)
-clear filename
+% Compute from thresholded networks
+for p=1:np
+    for g=1:ng
+        [clust_coef(:,p+1,g)] = clustering_coef_wu_sign(thr_cov(:,:,p,g),3);
+    end
+end
+
+% Format for boxplots
+clustvec=double.empty;
+idx=1;
+for p=1:np+1
+    for g=1:length(labels)
+        clustvec = vertcat(clustvec,clust_coef(:,p,g));
+        idx=idx+1;
+    end
+    clustvec(end+1,1)=nan;
+    idx=idx+1;
+end
+
+% PLOT: clustering coefficient
+f = figure('Units','inches','Position',[1 1 8 4]);
+boxplot(clustvec,STRgrp)
+xticklabels(boxSTRlabs)
+ylabel('Clustering Coefficient'); ylim([0 1])
+box off
+for p=1:np+1
+    text((length(labels)+1)/2+length(labels)*(p-1),.97,STRplabs{p})
+end
+title({[grp ' Clustering Coefficient across p-value range: '], p_range})
+filename = fullfile(outdir, ['ClustCoeff_' grp '_' p_range '.pdf']);
+print(f,'-dpdf',filename)
+clear filename f
+
 %%
 %-------------------------------------------------------------------------%
 ver = length(dir(fullfile(pwd,['covariance_out_tier1_' grp '*'])));
@@ -496,6 +502,7 @@ if ver == 0
 else
     fileout = ['covariance_out_tier1_' grp '_run' num2str(ver+1) '.mat'];
 end
+
 if exist('covariates','var')
     save(fileout,'adjMI','agrMat','allPartitions',...
         'cellData','cNames','cons_comm_roi','cons_labels','cov_permP','cov_paramP',...

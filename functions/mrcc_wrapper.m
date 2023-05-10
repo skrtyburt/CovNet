@@ -14,6 +14,8 @@ S = eventSamples(mat, samples);
 
 % identify a consensus community structure and hierarchical consensus
 [cons_vec, Tree_mrcc] = hierarchicalConsensus(S);
+
+% if isempty(Tree_mrcc)
 [~,ord] = sort(cons_vec);
 
 % get a coclassification (agreement) matrix from the partition set.
@@ -28,21 +30,23 @@ if exist('flag','var') && flag == 1
         'units','inches',...
         'position',[1 1 7.5 6],...
         'paperpositionmode','auto');
-    if ~isempty(Tree_mrcc)
+
+    if isempty(Tree_mrcc) || length(unique(all_part))==1
+        imagesc(ca_mat,[0 1]); axis square; colorbar;
+        xticks(1:1:length(ROIlabels)); xticklabels(ROIlabels(ord)); xtickangle(90);
+        yticks(1:1:length(ROIlabels)); yticklabels(ROIlabels(ord)); 
+        title({'CoClassification Matrix','No Partition Hierarchy: Single Community'})
+    else
         [ax_C, ax_H] = consensusPlot(ca_mat,cons_vec,Tree_mrcc);
         ax_C.YTick = 1:1:length(ROIlabels);
         ax_C.YTickLabel = ROIlabels(ord);
         ax_C.XTick = 1:1:length(ROIlabels);
         ax_C.XTickLabel = ROIlabels(ord);
         ax_C.XTickLabelRotation = 90;
-    
+        
         ax_H.YAxisLocation =  'right';
         ax_H.YLabel.String = [num2str(size(all_part,2)) ' Partitons in Hierarchical Tree (x-axis: meanCA)'];
         ax_H.CurrentPoint
-    else
-        imagesc(ca_mat); axis square; colorbar
-        title('No tree structure: One Partition')
     end
-    
 end
 end
