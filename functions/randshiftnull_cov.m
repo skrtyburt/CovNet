@@ -1,9 +1,13 @@
-function [cov_mat, param_p_mat, perm_p_mat] = randshiftnull_cov(covTS,R)
-narginchk(2,2)
+function [cov_mat, param_p_mat, perm_p_mat] = randshiftnull_cov(covTS,R,covs)
+narginchk(2,3)
 N = size(covTS,1); % row are regions/nodes
 S = size(covTS,2); % columns are subjects
 
-[cov_mat, param_p_mat] = covariance(covTS,0);
+if exist('covs','var')
+    [cov_mat, param_p_mat] = covariance(covTS,0,covs);
+else
+    [cov_mat, param_p_mat] = covariance(covTS,0);
+end
 pos_mat=cov_mat;
 pos_mat(pos_mat<0)=0;
 pos_mask = logical(pos_mat);
@@ -18,7 +22,11 @@ for r=1:R
     for s=1:S
         tsr(:,s) = covTS(randperm(N),s);
     end
-    covCorr_r = covariance(tsr,0);
+    if exist('covs','var')
+        covCorr_r = covariance(tsr,0,covs);
+    else
+        covCorr_r = covariance(tsr,0);
+    end
     rpos = covCorr_r;
     rpos(~pos_mask)=0;
     rneg = covCorr_r;

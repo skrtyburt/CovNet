@@ -28,15 +28,21 @@ if exist('flag','var') && flag == 1
         'units','inches',...
         'position',[1 1 7.5 6],...
         'paperpositionmode','auto');
-    [ax_C, ax_H] = consensusPlot(ca_mat,cons_vec,Tree_mrcc);
-    ax_C.YTick = 1:1:length(ROIlabels);
-    ax_C.YTickLabel = ROIlabels(ord);
-    ax_C.XTick = 1:1:length(ROIlabels);
-    ax_C.XTickLabel = ROIlabels(ord);
-    ax_C.XTickLabelRotation = 90;
-
-    ax_H.YAxisLocation =  'right';
-    ax_H.YLabel.String = [num2str(size(all_part,2)) ' Partitons in Hierarchical Tree (x-axis: meanCA)'];
-    ax_H.CurrentPoint
+    if ~isempty(Tree_mrcc)
+        [ax_C, ax_H] = consensusPlot(ca_mat,cons_vec,Tree_mrcc);
+        ax_C.YTick = 1:1:length(ROIlabels);
+        ax_C.YTickLabel = ROIlabels(ord);
+        ax_C.XTick = 1:1:length(ROIlabels);
+        ax_C.XTickLabel = ROIlabels(ord);
+        ax_C.XTickLabelRotation = 90;
+    
+        ax_H.YAxisLocation =  'right';
+        ax_H.YLabel.String = [num2str(size(all_part,2)) ' Partitons in Hierarchical Tree (x-axis: meanCA)'];
+        ax_H.CurrentPoint
+    else
+        imagesc(ca_mat); axis square; colorbar
+        title('No tree structure: One Partition')
+    end
+    
 end
 end
