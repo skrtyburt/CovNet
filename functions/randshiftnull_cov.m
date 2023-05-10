@@ -1,5 +1,6 @@
 function [cov_mat, param_p_mat, perm_p_mat] = randshiftnull_cov(covTS,R,covs)
 narginchk(2,3)
+
 % Input 
 %   covTS - Regional PET values for a group as a 2D matrix where rows are
 %           regions and columns are subjects.
@@ -14,6 +15,7 @@ narginchk(2,3)
 % Version Control:
 % Original version - Evgeny Chumin, Indiana University, 2023
 %%
+
 N = size(covTS,1); % row are regions/nodes
 S = size(covTS,2); % columns are subjects
 
@@ -45,6 +47,7 @@ for r=1:R
     else
         covCorr_r = covariance(tsr,0);
     end
+
  % separate empirical data postive and negative edges 
     rpos = covCorr_r;
     rpos(~pos_mask)=0;

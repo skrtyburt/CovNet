@@ -80,7 +80,7 @@ for r=2:Nr % every row
     for c=2:Nc % every column
         % generate covariance matrices
         if exist('covariates','var')
-            [covMat{r,c}, cov_paramP{r,c}]=covariance(cellData{r,c},1,covariates{r,c},ROIlabels,[-1 1],cmap);
+            [covMat{r,c}, cov_paramP{r,c}]=covariance(cellData{r,c},1,ROIlabels,[-1 1],cmap,covariates{r,c});
             sgtitle([grp ' ' cellData{r,1} ' ' cellData{1,c} ' partialCorr'])
         else
             [covMat{r,c}, cov_paramP{r,c}]=covariance(cellData{r,c},1,ROIlabels,[-1 1],cmap);
@@ -206,30 +206,38 @@ for r = 2:Nr % loop over age
     end
 end
 
-%% test differences across within leves (ie along rows/columns)
-disp('Pairwise Permutation Testing of Covariance Matrices')
-PairwisePermTests.alongrows = cell.empty;
-nc = Nc-1;
-ncomp = nchoosek(1:1:nc,2);
-counter=0;
-for r=2:Nr
-    for cmp=1:size(ncomp,1)
-        counter=counter+1;
-        PairwisePermTests.alongrows{counter,1} = [rNames{r} '_' cNames{ncomp(cmp,1)+1} ' vs. ' rNames{r} '_' cNames{ncomp(cmp,2)+1}];
-        PairwisePermTests.alongrows{counter,2} = perm_ttest2_cov(cellData{r,ncomp(cmp,1)+1},cellData{r,ncomp(cmp,2)+1},10000);
+%% test differences across within levels (ie along rows/columns)
+
+% pairwise testing of edge-level differences
+
+% start with comparisons across columns
+if Nc>2
+    m = nchoosek(2:Nc,2);
+    row_comparisons{1,1} = grp;
+    for ii=2:Nr
+    for jj=1:size(m,1)
+        row_comparisons{1,2} = 'perm_ttest_pval';
+        row_comparisons{end+1,1} = [rNames{ii} '_' cNames{m(jj,1)} ' vs. ' rNames{ii} '_' cNames{m(jj,2)}];  
+        row_comparisons{end,2} = perm_ttest2_cov(cellData{ii,m(jj,1)},cellData{ii,m(jj,2)},10000);
     end
+    end
+else 
+    row_comparisons = [];
 end
-clear counter
-PairwisePermTests.alongcols = cell.empty;
-nr = Nr-1;
-ncomp = nchoosek(1:1:nr,2);
-counter=0;
-for c=2:Nc
-    for cmp=1:size(ncomp,1)
-        counter=counter+1;
-        PairwisePermTests.alongcols{counter,1} = [cNames{c} '_' rNames{ncomp(cmp,1)+1} ' vs. ' cNames{c} '_' rNames{ncomp(cmp,2)+1}];
-        PairwisePermTests.alongcols{counter,2} = perm_ttest2_cov(cellData{ncomp(cmp,1)+1,c},cellData{ncomp(cmp,2)+1,c},10000);
+
+% now comparisons across rows
+if Nr>2
+    m = nchoosek(2:Nr,2);
+    col_comparisons{1,1} = grp;
+    for ii=2:Nc
+    for jj=1:size(m,1)
+        col_comparisons{1,2} = 'perm_ttest_pval';
+        col_comparisons{end+1,1} = [cNames{ii} '_' rNames{m(jj,1)} ' vs. ' cNames{ii} '_' rNames{m(jj,2)}];  
+        col_comparisons{end,2} = perm_ttest2_cov(cellData{m(jj,1),ii},cellData{m(jj,2),ii},10000);
     end
+    end
+else
+    col_comparisons = [];
 end
 clear counter
 %%
@@ -494,13 +502,23 @@ if ver == 0
 else
     fileout = ['covariance_out_tier1_' grp '_run' num2str(ver+1) '.mat'];
 end
-save(fileout,'adjMI','agrMat','allPartitions',...
-    'cellData','cNames','cons_comm_roi','cons_labels','cov_permP','cov_paramP',...
-    'covMat','grp','mrccPartition','N','nc','Nc','Nr','R','rNames','ROIlabels','S',...
-    'PairwisePermTests',...
-    'clust_coef','degree','density','labels','max_component_size','min_component_size',...
-    'negStrength','posStrength','pval','thr_cov','totalPosStrength','totalNegStrength',...
-    'covariates')
+
+if exist('covariates','var')
+    save(fileout,'adjMI','agrMat','allPartitions',...
+        'cellData','cNames','cons_comm_roi','cons_labels','cov_permP','cov_paramP',...
+        'covMat','grp','mrccPartition','N','nc','Nc','Nr','R','rNames','ROIlabels','S',...
+        'col_comparisons','row_comparisons',...
+        'clust_coef','degree','density','labels','max_component_size','min_component_size',...
+        'negStrength','posStrength','pval','thr_cov','totalPosStrength','totalNegStrength',...
+        'covariates')
+else
+    save(fileout,'adjMI','agrMat','allPartitions',...
+        'cellData','cNames','cons_comm_roi','cons_labels','cov_permP','cov_paramP',...
+        'covMat','grp','mrccPartition','N','nc','Nc','Nr','R','rNames','ROIlabels','S',...
+        'col_comparisons','row_comparisons',...
+        'clust_coef','degree','density','labels','max_component_size','min_component_size',...
+        'negStrength','posStrength','pval','thr_cov','totalPosStrength','totalNegStrength')
+end
 close all
 
 
