@@ -30,6 +30,7 @@ if exist('flag','var') && flag == 1
         'units','inches',...
         'position',[1 1 7.5 6],...
         'paperpositionmode','auto');
+
     if isempty(Tree_mrcc) || length(unique(all_part))==1
         imagesc(ca_mat,[0 1]); axis square; colorbar;
         xticks(1:1:length(ROIlabels)); xticklabels(ROIlabels(ord)); xtickangle(90);

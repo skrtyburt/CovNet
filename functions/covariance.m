@@ -1,4 +1,5 @@
-function [cov_mat, cov_pval_mat] = covariance(data,flag,covs,roi_labels,lims,cmap)
+function [cov_mat, cov_pval_mat] = covariance(data,flag,roi_labels,lims,cmap,covs)
+
 % data -        regions(rows) by subject(column)
 % covs -        covariates to account for in subject-by-covariate matrix
 % roi_labels -  a cell array of string lables for regions/nodes
