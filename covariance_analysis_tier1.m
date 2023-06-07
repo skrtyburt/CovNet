@@ -210,6 +210,7 @@ end
 disp('Pairwise Permutation Testing of Covariance Matrices')
 PairwisePermTests.alongrows = cell.empty;
 nc = Nc-1;
+if nc>1
 ncomp = nchoosek(1:1:nc,2);
 counter=0;
 for r=2:Nr
@@ -220,8 +221,10 @@ for r=2:Nr
     end
 end
 clear counter
+end
 PairwisePermTests.alongcols = cell.empty;
 nr = Nr-1;
+if nr>1
 ncomp = nchoosek(1:1:nr,2);
 counter=0;
 for c=2:Nc
@@ -232,6 +235,7 @@ for c=2:Nc
     end
 end
 clear counter
+end
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % for every selected p-value threshold
