@@ -29,6 +29,8 @@ if exist('flag','var') && flag == 1
     ylabel('Subjects'); xlabel('Regions')
     title('Z-Scored Series')
     colorbar
+    lm=max(abs(zdata(:)));
+    caxis([-lm lm])
     subplot(3,1,2:3)
     imagesc(cov_mat); axis square
     if exist('cmap','var')
