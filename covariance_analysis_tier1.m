@@ -206,6 +206,20 @@ for r = 2:Nr % loop over age
     end
 end
 
+<<<<<<< HEAD
+%% test differences across within leves (ie along rows/columns)
+disp('Pairwise Permutation Testing of Covariance Matrices')
+PairwisePermTests.alongrows = cell.empty;
+nc = Nc-1;
+if nc>1
+ncomp = nchoosek(1:1:nc,2);
+counter=0;
+for r=2:Nr
+    for cmp=1:size(ncomp,1)
+        counter=counter+1;
+        PairwisePermTests.alongrows{counter,1} = [rNames{r} '_' cNames{ncomp(cmp,1)+1} ' vs. ' rNames{r} '_' cNames{ncomp(cmp,2)+1}];
+        PairwisePermTests.alongrows{counter,2} = perm_ttest2_cov(cellData{r,ncomp(cmp,1)+1},cellData{r,ncomp(cmp,2)+1},10000);
+=======
 %% test differences across within levels (ie along rows/columns)
 
 % pairwise testing of edge-level differences
@@ -220,10 +234,25 @@ if Nc>2
         row_comparisons{end+1,1} = [rNames{ii} '_' cNames{m(jj,1)} ' vs. ' rNames{ii} '_' cNames{m(jj,2)}];  
         row_comparisons{end,2} = perm_ttest2_cov(cellData{ii,m(jj,1)},cellData{ii,m(jj,2)},10000);
     end
+>>>>>>> d1b89737980d50c78bf175c20283a0349abbc2de
     end
 else 
     row_comparisons = [];
 end
+<<<<<<< HEAD
+clear counter
+end
+PairwisePermTests.alongcols = cell.empty;
+nr = Nr-1;
+if nr>1
+ncomp = nchoosek(1:1:nr,2);
+counter=0;
+for c=2:Nc
+    for cmp=1:size(ncomp,1)
+        counter=counter+1;
+        PairwisePermTests.alongcols{counter,1} = [cNames{c} '_' rNames{ncomp(cmp,1)+1} ' vs. ' cNames{c} '_' rNames{ncomp(cmp,2)+1}];
+        PairwisePermTests.alongcols{counter,2} = perm_ttest2_cov(cellData{ncomp(cmp,1)+1,c},cellData{ncomp(cmp,2)+1,c},10000);
+=======
 
 % now comparisons across rows
 if Nr>2
@@ -234,12 +263,14 @@ if Nr>2
         col_comparisons{1,2} = 'perm_ttest_pval';
         col_comparisons{end+1,1} = [cNames{ii} '_' rNames{m(jj,1)} ' vs. ' cNames{ii} '_' rNames{m(jj,2)}];  
         col_comparisons{end,2} = perm_ttest2_cov(cellData{m(jj,1),ii},cellData{m(jj,2),ii},10000);
+>>>>>>> d1b89737980d50c78bf175c20283a0349abbc2de
     end
     end
 else
     col_comparisons = [];
 end
 clear counter
+end
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % for every selected p-value threshold
