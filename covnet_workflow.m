@@ -406,37 +406,14 @@ fcn_summary_modules(ci_xfad_12mo_F,ctrl_tier1,cmask_12mo_F,outroot10b2)
     % run the script
         fcn_summary_modules(ci_xfad_12mo_M,xfad_tier1,cmask_12mo,outroot16)
   
- 
-%% **************************** RS- HAVEN'T RUN PAST THIS YET... *************************************
-
 
 %% tier 2 compare network metrics
-
-     % Compare Males at each age (Set by the cmask input) between control
-     % and xfad at p-value thresholds set in tier1.
-     
-     cmask_all = [1,1;1,1;1,1];
-
-     % Note: Network metric comparisons are only done on thresholded networks. 
-covariance_analysis_tier2a(ctrl_tier1,xfad_tier1,cmask_all,0.05)
-
- 
-
-
-% Compare within module network metrics (given a reference partition)
-    
-    
-    %%         ci_xfad_12mo_M = xfad_tier1.mrccPartition{4,2};
-
-     ci_ctrl_4mo_M = ctrl_tier1.mrccPartition{2,2};
-    
-covariance_analysis_tier2b(ci_ctrl_4mo_M,'CTRL_4mM_ref',ctrl_tier1,xfad_tier1,cmask_all,bluered_cmap,pval)
-
-
-
-
-
-
+% 
+% Comparisons across groups. 
+%      
+    cmask_all = [1,1;1,1;1,1];
+% 
+covariance_analysis_tier2(ctrl_tier1,xfad_tier1,cmask_all,pval)
 
 
 
