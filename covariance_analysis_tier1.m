@@ -27,6 +27,7 @@ narginchk(4,5)
 %
 % Version Control:
 % Original version - Evgeny Chumin, Indiana University, 2022
+% Modified by Charlie Burton, Indiana University, 2024
 %%
 %% Perform data checks
 % cell structure check variable names in first row col
@@ -87,8 +88,8 @@ for r=2:Nr % every row
             sgtitle([grp ' ' cellData{r,1} ' ' cellData{1,c}])
         end
         
-        filename = fullfile(outdir, ['covMat_' grp '_' cellData{r,1} '_' cellData{1,c} '.pdf']);
-        print(gcf,'-dpdf',filename)
+        filename = fullfile(outdir, ['covMat_' grp '_' cellData{r,1} '_' cellData{1,c}]);
+        exportgraphics(gcf,strcat(filename,'.png'),"Resolution",300)
         clear filename
     end
 end
@@ -113,16 +114,37 @@ end
 %% community detection 
 % mrcc - Jeub 2018
 agrMat = rNames;    agrMat(1,1:Nc) = cNames;    % multiscale agreement matrices
-mrccPartition = rNames;    mrccPartition(1,1:Nc) = cNames;    % multiresolution consensus modular parition
+mrccPartition = rNames;    mrccPartition(1,1:Nc) = cNames;    % multiresolution consensus modular partition
+adjPartition = rNames;     adjPartition(1,1:Nc) = cNames;     % adjusted modular partition
 allPartitions = rNames;    allPartitions(1,1:Nc) = cNames;    % all hierarchical partitions
 for r=2:Nr % every row
     for c=2:Nc % every column
         % multiresolution concenus clustering 
         [agrMat{r,c}, mrccPartition{r,c},allPartitions{r,c}] = mrcc_wrapper(covMat{r,c},10000,1,ROIlabels);
         mrccPartition{r,c} = fcn_relabel_partitions(mrccPartition{r,c});
+        region = transpose([1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27]);
+        freq = histcounts(mrccPartition{r,c});
+        grp_freq = transpose(freq(mrccPartition{r,c}));
+        com_data = [mrccPartition{r,c} grp_freq region];
+        sorted = sortrows(com_data,[2,1],"descend");
+        g=1;
+        sorted(1,4) = g;
+        for i=2:size(mrccPartition{r,c},1)
+            if sorted(i,1) == sorted(i-1,1)
+                sorted(i,4) = g;
+            else
+                g=g+1;
+                sorted(i,4) = g;
+            end
+        end
+        sortedv2 = [sorted(:,4) sorted(:,3)];
+        sortedv2 = sortrows(sortedv2,2);
+        input_dat = sortedv2(:,1);
+        adjPartition{r,c} = input_dat;
         sgtitle([grp ' ' cellData{r,1} ' ' cellData{1,c}])
-        filename = fullfile(outdir, ['mrcc_out_' grp '_' cellData{r,1} '_' cellData{1,c} '.pdf']);
-        print(gcf,'-dpdf',filename)
+        filename = fullfile(outdir, ['mrcc_out_' grp '_' cellData{r,1} '_' cellData{1,c}]);
+        exportgraphics(gcf,strcat(filename,'.png'),"Resolution",300)
+
         clear filename
     end
 end
@@ -134,7 +156,7 @@ ci = 0; % counting indices
 for c=2:Nc % every column (g1)
 for r=2:Nr % every row (g1)
     ci=ci+1;
-    cons_labels{ci} = [cellData{r,1} ' ' cellData{1,c}];
+    cons_labels{ci} = [cellData{r,1} ' ' cellData{1,c}]; %#ok<*AGROW>
     cii = 0;
     for cc=2:Nc % every column (g2)
     for rr=2:Nr % every row (g2)
@@ -159,37 +181,36 @@ figure(...
 imagesc(adjMI); axis square
 colormap(cmap(33:end,:))
 yticks(1:1:cii); yticklabels(cons_labels)
-xticks(1:1:cii); xticklabels(cons_labels); xtickangle(45)
+xticks(1:1:cii); xticklabels(cons_labels); xtickangle(90)
 title(['Adjusted Mutual Information - ' grp])
 colorbar
-filename = fullfile(outdir, ['adj_mutual_info_' grp '_consensus_comparisons.pdf']);
-print(gcf,'-dpdf',filename)  % SAVE FIGURE
+filename = fullfile(outdir, ['adj_mutual_info_' grp '_consensus_comparisons']);
+exportgraphics(gcf,strcat(filename,'.png'),"Resolution",300)
 clear filename
 
 %% create matrix plots of consensus ordered covariance
 for r=2:Nr % every row
     for c=2:Nc % every column
-        [X,Y,idx_ord]=grid_communities(mrccPartition{r,c});
+        [X,Y,idx_ord]=grid_communities(adjPartition{r,c});
         figure(...
         'units','inches',...
         'position',[1 1 6 6],...
         'paperpositionmode','auto');
     imagesc(covMat{r,c}(idx_ord,idx_ord)); axis square
-    colormap(cmap); caxis([-1 1])
+    colormap(cmap); clim([-1 1])
     hold on
     plot(X,Y,'k','LineWidth',2)
     xticks(1:1:N); yticks(1:1:N);
-    yticklabels(ROIlabels(idx_ord)); xticklabels(ROIlabels(idx_ord)); xtickangle(45)
+    yticklabels(ROIlabels(idx_ord)); xticklabels(ROIlabels(idx_ord)); xtickangle(90)
     colorbar
     title('Community Ordered Pearson Covariance Matrix')
     sgtitle([grp ' ' cellData{r,1} ' ' cellData{1,c}])
-    filename = fullfile(outdir, ['commOrd_covMat_' grp '_' cellData{r,1} '_' cellData{1,c} '.pdf']);
-    print(gcf,'-dpdf',filename)
+    filename = fullfile(outdir, ['commOrd_covMat_' grp '_' cellData{r,1} '_' cellData{1,c}]);
+    exportgraphics(gcf,strcat(filename,'.png'),"Resolution",300)
     clear filename
     end
 end
 close all
-
 %% print a list of labels by community
 cons_comm_roi = rNames;    cons_comm_roi(1,1:Nc) = cNames;    
 for r = 2:Nr % loop over age
@@ -205,8 +226,7 @@ for r = 2:Nr % loop over age
         end
     end
 end
-
-%% test differences across within leves (ie along rows/columns)
+%% test differences across within levels (ie along rows/columns)
 disp('Pairwise Permutation Testing of Covariance Matrices')
 PairwisePermTests.alongrows = cell.empty;
 nc = Nc-1;
@@ -267,18 +287,18 @@ for p=1:np
     for i = 1:cnt
         nexttile
         imagesc(thr_cov(:,:,p,i)); axis square
-        caxis([-1 1]); colormap(cmap)
+        clim([-1 1]); colormap(cmap)
         xticks(1:1:N); yticks(1:1:N);
         yticklabels(ROIlabels); xticklabels(ROIlabels); xtickangle(45)
         title(labels{i})
         colorbar
     end
+    set(gcf, 'Position', get(0, 'Screensize'));
     sgtitle({[grp ' Thresholded Covariance at perm p < ' num2str(pval(p))], ' '})
-    filename = fullfile(outdir, ['thresh_covMats_' grp '_p' num2str(pval(p)) '.pdf']);
-    print(gcf,'-dpdf',filename)
+    filename = fullfile(outdir, ['thresh_covMats_' grp '_p' num2str(pval(p))]);
+    exportgraphics(gcf,strcat(filename,'.png'),"Resolution",300)
     clear filename
 end
-
 %% Compute global and regional network metrics
 [~,~,np,ng]=size(thr_cov);
 % build p-value labels
@@ -288,21 +308,21 @@ end
 p_range = [num2str(max(pval)) '-' num2str(min(pval))];
 %% Density
 % only applies to thresholded networks
+boxlabs=cell.empty;
 for p=1:np
     for g=1:ng
         density(p,g) = density_und(thr_cov(:,:,p,g));
     end
+    boxlabs = horzcat(boxlabs,labels,' ');
 end
 f=figure(...
         'units','inches',...
         'position',[1 1 5 4],...
         'paperpositionmode','auto');
-bar(density); xticklabels(plabs); ylim([0 1]); ylabel('Network Density')
-legend(labels,'Location','eastoutside')
-filename = fullfile(outdir, ['netwDensity_' grp '_' p_range '.pdf']);
-print(f,'-dpdf',filename)
+bar(density,"FaceColor",[0.6350 0.0780 0.1840]); xticklabels(boxlabs); ylim([0 1]); ylabel('Network Density'); xtickangle(90);
+filename = fullfile(outdir, ['netwDensity_' grp '_' p_range]);
+exportgraphics(f,strcat(filename,'.png'),"Resolution",300)
 clear filename f
-
 %% Degree
 % only applies to thresholded networks
 for p=1:np
@@ -337,10 +357,9 @@ for p=1:np
 end
 title({[grp ' group Degree across p-value range: '], p_range})
 
-filename = fullfile(outdir, ['netwDegree_' grp '_' p_range '.pdf']);
-print(f,'-dpdf',filename)
+filename = fullfile(outdir, ['netwDegree_' grp '_' p_range]);
+exportgraphics(f,strcat(filename,'.png'),"Resolution",300)
 clear filename f
-
 %% Strength
 % applies to both unthresholded and thresholded networks
 % compute from unthresholded networks
@@ -382,14 +401,14 @@ f = figure('Units','inches','Position',[1 1 8 4]);
 upr = max(posSvec)+.1*max(posSvec);
 boxplot(posSvec,STRgrp)
 xticklabels(boxSTRlabs)
-ylabel('Nodal Postive Strengths'); ylim([0 upr])
+ylabel('Positive Node Strengths'); ylim([0 upr])
 box off
 for p=1:np+1
     text((length(labels)+1)/2+length(labels)*(p-1),upr-(.02*upr),STRplabs{p})
 end
-title({[grp ' Nodal Positive Strength across p-value range: '], p_range})
-filename = fullfile(outdir, ['nodePosStrength_' grp '_' p_range '.pdf']);
-print(f,'-dpdf',filename)
+title({[grp ' Positive Nodal Strength across p-value(s): '], p_range})
+filename = fullfile(outdir, ['nodePosStrength_' grp '_' p_range]);
+exportgraphics(f,strcat(filename,'.png'),"Resolution",300)
 clear filename f
 
 % PLOT: Nodal negative strength
@@ -397,14 +416,14 @@ f = figure('Units','inches','Position',[1 1 8 4]);
 upr = max(negSvec)+.1*max(negSvec);
 boxplot(negSvec,STRgrp)
 xticklabels(boxSTRlabs)
-ylabel('Nodal Negative Strengths'); ylim([0 upr])
+ylabel('Negative Node Strengths'); ylim([0 upr])
 box off
 for p=1:np+1
     text((length(labels)+1)/2+length(labels)*(p-1),upr-(.02*upr),STRplabs{p})
 end
-title({[grp ' Nodal Negative Strength across p-value range: '], p_range})
-filename = fullfile(outdir, ['nodeNegStrength_' grp '_' p_range '.pdf']);
-print(f,'-dpdf',filename)
+title({[grp ' Negative Nodal Strength across p-value(s): '], p_range})
+filename = fullfile(outdir, ['nodeNegStrength_' grp '_' p_range]);
+exportgraphics(f,strcat(filename,'.png'),"Resolution",300)
 clear filename f
 
 % PLOT: Total positive Strength
@@ -414,8 +433,8 @@ f=figure(...
         'paperpositionmode','auto');
 bar(totalPosStrength); xticklabels(STRplabs); ylabel('Total Positive Strength')
 legend(labels,'Location','eastoutside')
-filename = fullfile(outdir, ['totPosStrength_' grp '_' p_range '.pdf']);
-print(f,'-dpdf',filename)
+filename = fullfile(outdir, ['totPosStrength_' grp '_' p_range]);
+exportgraphics(f,strcat(filename,'.png'),"Resolution",300)
 clear filename f
 
 % PLOT: Total negative Strength
@@ -425,10 +444,9 @@ f=figure(...
         'paperpositionmode','auto');
 bar(totalNegStrength); xticklabels(STRplabs); ylabel('Total Negative Strength')
 legend(labels,'Location','eastoutside')
-filename = fullfile(outdir, ['totNegStrength_' grp '_' p_range '.pdf']);
-print(f,'-dpdf',filename)
+filename = fullfile(outdir, ['totNegStrength_' grp '_' p_range]);
+exportgraphics(f,strcat(filename,'.png'),"Resolution",300)
 clear filename f
-       
 %% Largest Connectected Component
 % applies only to thresholded networks to find disconnected nodes/components
 for p=1:np
@@ -448,10 +466,9 @@ legend(labels,'Location','eastoutside')
 title({['Y < ' num2str(N) ' = Fractured Network'],...
     'Y ==1 = Disconnected Node'})
 
-filename = fullfile(outdir, ['minConnectedComponent_' grp '_' p_range '.pdf']);
-print(f,'-dpdf',filename)
+filename = fullfile(outdir, ['minConnectedComponent_' grp '_' p_range]);
+exportgraphics(f,strcat(filename,'.png'),"Resolution",300)
 clear filename f
-
 %% Clustering Coefficient
 % The clustering coefficient variant used here can be applied to fully
 % connected and thresholded network. 
@@ -487,10 +504,9 @@ for p=1:np+1
     text((length(labels)+1)/2+length(labels)*(p-1),.97,STRplabs{p})
 end
 title({[grp ' Clustering Coefficient across p-value range: '], p_range})
-filename = fullfile(outdir, ['ClustCoeff_' grp '_' p_range '.pdf']);
-print(f,'-dpdf',filename)
+filename = fullfile(outdir, ['ClustCoeff_' grp '_' p_range]);
+exportgraphics(f,strcat(filename,'.png'),"Resolution",300)
 clear filename f
-
 %%
 %-------------------------------------------------------------------------%
 ver = length(dir(fullfile(pwd,['covariance_out_tier1_' grp '*'])));
@@ -517,13 +533,4 @@ else
         'negStrength','posStrength','pval','thr_cov','totalPosStrength','totalNegStrength')
 end
 close all
-
-
-
-
-
-
-
-
-
-
+end
