@@ -10,6 +10,7 @@ function fcn_summary_modules(ci,t1out_grp1,cmask,outprefix,t1out_grp2,summaryonl
 %   outprefix -     a prefix that is appended to all written out files
 %
 % Author: Evgeny Jenya Chumin (2023), Indiana University
+% Modified by Charlie Burton (2024), Indiana University
 
 %%
 narginchk(2,6)
@@ -104,7 +105,7 @@ for i=1:length(rw)
         % update factors
         if cj == 1
             if grpF==2
-                allgrp = vertcat(allgrp,ones(length(cmean),1));
+                allgrp = vertcat(allgrp,ones(length(cmean),1)); %#ok<*AGROW>
             end
             if rwF > 1
                 allrw = vertcat(allrw,zeros(length(cmean),1)+(rw(i)-1));
@@ -180,56 +181,55 @@ if grpF==2
 end
 
 if summaryonly==0
-%ANOVAN
-factors=cell.empty;
-fnames=cell.empty;
-if grpF == 2
-    factors=vertcat(factors,{allgrp});
-    fnames=vertcat(fnames,{'group'});
-end
-if rwF > 1
-    factors=vertcat(factors,{allrw});
-    fnames=vertcat(fnames,{'row'});
-end
-if clF > 1
-    factors=vertcat(factors,{allcl});
-    fnames=vertcat(fnames,{'col'});
-end
-
-for cj=1:length(ciu)
-    if length(factors) == 1
-        [p(:,cj),tbl{1,cj},stats{1,cj}]=anovan(alldata{cj,1},factors,'varnames',fnames);
-    elseif length(factors)>1
-        [p(:,cj),tbl{1,cj},stats{1,cj}]=anovan(alldata{cj,1},factors,'model','interaction','varnames',fnames);
+    %% ANOVAN
+    factors=cell.empty;
+    fnames=cell.empty;
+    if grpF == 2
+        factors=vertcat(factors,{allgrp});
+        fnames=vertcat(fnames,{'group'});
     end
-    tblmodel=cell2table(tbl{1,cj});
-    writetable(tblmodel, [outprefix '_module' num2str(cj) '_anovan.txt'])
-    clear tblmodel
-    close all hidden
-    % multiple comparisons (only if main effects are present)
-    dim = find(p(1:length(factors),cj)<0.05);
-    if ~isempty(dim)
-        [mcres{1,cj},~,f,gnames{1,cj}] = multcompare(stats{1,cj},'Dimension',dim);
-        tblmc = array2table(mcres{1,cj},'VariableNames', ...
-        ["Group A","Group B","Lower Limit","A-B","Upper Limit","P-value"]);
-        tblmc.("Group A")=gnames{1,cj}(tblmc.("Group A"));
-        tblmc.("Group B")=gnames{1,cj}(tblmc.("Group B"));
-        if exist('outprefix','var')
-            fileout = [outprefix '_module' num2str(cj) '_multcomp_table'];
-        else
-            fileout = ['refMod_comsummary_' '_module' num2str(cj) 'multcomp_table'];
+    if rwF > 1
+        factors=vertcat(factors,{allrw});
+        fnames=vertcat(fnames,{'row'});
+    end
+    if clF > 1
+        factors=vertcat(factors,{allcl});
+        fnames=vertcat(fnames,{'col'});
+    end
+    
+    for cj=1:length(ciu)
+        if isscalar(factors)
+            [p(:,cj),tbl{1,cj},stats{1,cj}]=anovan(alldata{cj,1},factors,'varnames',fnames);
+        elseif length(factors)>1
+            [p(:,cj),tbl{1,cj},stats{1,cj}]=anovan(alldata{cj,1},factors,'model','interaction','varnames',fnames);
         end
-        ver = length(dir(fullfile(pwd,[fileout '*'])));
-        if ver == 0
-            writetable(tblmc,[fileout '.txt'],'Delimiter','\t')
-        else
-            writetable(tblmc,[fileout '_run' num2str(ver+1),'.txt'],'Delimiter','\t')
+        tblmodel=cell2table(tbl{1,cj});
+        writetable(tblmodel, [outprefix '_module' num2str(cj) '_anovan.txt'])
+        clear tblmodel
+        close all hidden
+        % multiple comparisons (only if main effects are present)
+        dim = find(p(1:length(factors),cj)<0.05);
+        if ~isempty(dim)
+            [mcres{1,cj},~,~,gnames{1,cj}] = multcompare(stats{1,cj},'Dimension',dim);
+            tblmc = array2table(mcres{1,cj},'VariableNames', ...
+            ["Group A","Group B","Lower Limit","A-B","Upper Limit","P-value"]);
+            tblmc.("Group A")=gnames{1,cj}(tblmc.("Group A"));
+            tblmc.("Group B")=gnames{1,cj}(tblmc.("Group B"));
+            if exist('outprefix','var')
+                fileout = [outprefix '_module' num2str(cj) '_multcomp_table'];
+            else
+                fileout = ['refMod_comsummary_' '_module' num2str(cj) 'multcomp_table'];
+            end
+            ver = length(dir(fullfile(pwd,[fileout '*'])));
+            if ver == 0
+                writetable(tblmc,[fileout '.txt'],'Delimiter','\t')
+            else
+                writetable(tblmc,[fileout '_run' num2str(ver+1),'.txt'],'Delimiter','\t')
+            end
+            clear ver
         end
-        clear ver
     end
 end
-end
-%
 % save the means and stdevs
 if exist('outprefix','var')
     fileout = [outprefix '_comsummary'];
@@ -239,9 +239,9 @@ end
 
 ver = length(dir(fullfile(pwd,[fileout '*'])));
 if ver == 0
-    writetable(gmeans,[fileout '.txt'],'Delimiter','\t')
+    writetable(gmeans,fileout,"FileType","spreadsheet")
 else
-    writetable(gmeans,[fileout '_run' num2str(ver+1),'.txt'],'Delimiter','\t')
+    writetable(gmeans,[fileout '_run' num2str(ver+1)],"FileType","spreadsheet")
 end
 clear ver
 %% Write data for group2
@@ -254,9 +254,9 @@ if grpF == 2
 
     ver = length(dir(fullfile(pwd,[fileout '*'])));
     if ver == 0
-        writetable(gmeans_grp2,[fileout '.txt'],'Delimiter','\t')
+        writetable(gmeans_grp2,[fileout '.txt'],'FileType','spreadsheet')
     else
-        writetable(gmeans_grp2,[fileout '_run' num2str(ver+1),'.txt'],'Delimiter','\t')
+        writetable(gmeans_grp2,[fileout '_run' num2str(ver+1)],'FileType','spreadsheet')
     end
     clear ver
 end
